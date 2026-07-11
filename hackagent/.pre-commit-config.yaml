@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.8.3
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+        additional_dependencies: [cz-conventional-gitmoji==0.7.0]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Keep in sync with the ruff version resolved by uv / used in CI
+    # (.github/workflows/ci.yml runs `uv run ruff …`). Version drift here
+    # lets the hook pass locally while CI's ruff fails.
+    rev: v0.15.15
+    hooks:
+      # Run the linter.
+      - id: ruff-check
+        args: [--fix]
+      # Run the formatter.
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest (unit only)
+        # Integration + e2e tests run in GitHub Actions (see
+        # ``.github/workflows/ci.yml``). The local pre-commit only
+        # runs the unit suite so commits stay snappy. To run the full
+        # integration suite locally on demand:
+        #   uv run pytest tests/integration/ --run-integration
+        #
+        # ``-n 4`` (not ``-n auto``) so the hook works both on 4-vCPU
+        # CI runners and on shared HPC login nodes that advertise 64+
+        # logical CPUs but enforce per-user thread limits.
+        entry: uv run pytest tests/unit/ -n 4
+        language: system
+        pass_filenames: false
+        files: ^(.*\.py|pyproject\.toml|poetry\.lock|.*requirements.*\.txt|.*package\.json|.*package-lock\.json)$

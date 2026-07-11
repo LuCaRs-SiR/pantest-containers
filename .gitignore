@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+pip-wheel-metadata/
+*.egg-info/
+dist/
+build/
+.env
+.venv
+venv/
+tmp/
+.tmpvenv/
+*.log
+
+# VS Code
+.vscode/
+
+# Docker Compose overrides
+docker-compose.override.yml
+*.env
+
+# macOS
+.DS_Store
+
+# Editors
+*.swp
+*~

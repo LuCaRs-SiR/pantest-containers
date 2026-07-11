@@ -1,0 +1,399 @@
+name: CI Checks
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["**"]
+
+env:
+  UV_VERSION: "0.10.11"
+
+jobs:
+  commit-check:
+    name: Commit Messages
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check out code with full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # Needed for commit range check
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Check commit messages in PR
+        run: uv run cz check --rev-range ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+
+  python-checks:
+    name: Linting and Formatting
+    runs-on: ubuntu-latest
+    # Skip on main push since PR already validated
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run Ruff Linting
+        run: uv run ruff check .
+
+      - name: Run Ruff Formatting Check
+        run: uv run ruff format --check .
+
+  # ── Unit tests: full OS × Python-version matrix ──────────────────────────
+  # Runs tests/unit/ only (no external services, fast). Coverage artifact
+  # is uploaded for the canonical ubuntu/3.11 slice and merged later.
+  test-matrix:
+    name: Tests (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run unit tests with coverage
+        run: uv run pytest tests/unit/ --cov --cov-report=xml:reports/coverage.xml
+
+      - name: Upload unit coverage artifact
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-unit
+          path: reports/.coverage
+          include-hidden-files: true
+          retention-days: 1
+
+  # ── Quick test – PRs to non-main branches ────────────────────────────────
+  test-quick:
+    name: Tests (Quick)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'pull_request' && github.base_ref != 'main'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run unit tests with coverage
+        run: uv run pytest tests/unit/ --cov --cov-report=xml:reports/coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: reports/coverage.xml
+          flags: unit
+          fail_ci_if_error: true
+
+  # ── Integration (offline) ─────────────────────────────────────────────────
+  # Covers tests/integration/tui/ — mock-based TUI integration tests
+  # that exercise widget composition + lifecycle without external
+  # services. (The former tests/integration/storage/ moved to
+  # tests/unit/server/storage/ since it only exercised the in-memory
+  # local backend.)
+  integration-offline:
+    name: Integration Tests (Offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run offline integration tests with coverage
+        run: >
+          uv run pytest
+          tests/integration/tui/
+          --run-integration
+          -n auto
+          --dist=loadfile
+          -m "not slow"
+          -v --tb=short
+          --cov --cov-fail-under=0
+          --cov-report=xml:reports/coverage.xml
+
+      - name: Upload offline-integration coverage artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-integration-offline
+          path: reports/.coverage
+          include-hidden-files: true
+          retention-days: 1
+
+  # ── Integration (Ollama) ──────────────────────────────────────────────────
+  # Covers tests/integration/router/ and tests/integration/attacks/.
+  # Requires a running Ollama instance with tinyllama.
+  #
+  # Sharded across two runners (real CPUs, real parallelism):
+  #   - shard=fast → ``-m "not slow"`` (the bulk; ~few minutes)
+  #   - shard=slow → ``-m "slow"`` (advprefix multi-judge; ~14 min on CPU)
+  # Within each shard pytest-xdist spreads tests across runner cores
+  # with ``-n auto --dist=loadfile`` and Ollama is allowed to serve
+  # multiple concurrent requests via ``OLLAMA_NUM_PARALLEL=4``.
+  integration-ollama:
+    name: Integration Tests (Ollama, ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - fast
+          - slow
+    env:
+      HACKAGENT_API_KEY: ${{ secrets.HACKAGENT_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OLLAMA_MODEL: tinyllama
+      # Let Ollama serve concurrent requests from pytest-xdist workers.
+      OLLAMA_NUM_PARALLEL: "4"
+      TEST_MAX_TOKENS_FAST: "15"
+      TEST_MAX_TOKENS_MEDIUM: "25"
+      TEST_MAX_TOKENS_SLOW: "40"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          sleep 5
+
+      - name: Cache Ollama models
+        uses: actions/cache@v6
+        with:
+          path: ~/.ollama/models
+          key: ollama-models-tinyllama-${{ runner.os }}
+          restore-keys: |
+            ollama-models-tinyllama-
+
+      - name: Pull Ollama model
+        # Integration tests reuse tinyllama for the target, attacker,
+        # judges, and category classifier (via
+        # ``_fast_classifier_config``). The orchestrator's implicit
+        # default classifier (``gemma3:4b``) is much slower on CPU
+        # runners and not pulled here on purpose.
+        run: ollama pull tinyllama
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run Ollama integration tests with coverage
+        # Each shard handles one ``-m`` selector so the slow advprefix
+        # test (~14 min on CPU) runs on its own runner instead of
+        # bottlenecking the rest of the suite.
+        run: >
+          uv run pytest
+          tests/integration/router/
+          tests/integration/attacks/
+          --run-integration
+          -n auto
+          --dist=loadfile
+          -m "${{ matrix.shard == 'slow' && 'slow' || 'not slow' }}"
+          -v --tb=short
+          --cov --cov-fail-under=0
+          --cov-report=xml:reports/coverage.xml
+
+      - name: Upload Ollama-integration coverage artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-integration-ollama-${{ matrix.shard }}
+          path: reports/.coverage
+          include-hidden-files: true
+          retention-days: 1
+
+  # ── E2E tests ─────────────────────────────────────────────────────────────
+  # Requires OPENROUTER_API_KEY (and optionally HACKAGENT_API_KEY).
+  # Skips gracefully when secrets are absent.
+  test-e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    env:
+      HACKAGENT_API_KEY: ${{ secrets.HACKAGENT_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      TEST_MAX_TOKENS_FAST: "15"
+      TEST_MAX_TOKENS_MEDIUM: "25"
+      TEST_MAX_TOKENS_SLOW: "40"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run e2e tests with coverage
+        run: >
+          uv run pytest
+          tests/e2e/
+          --ignore=tests/e2e/attacks
+          -v --tb=short
+          --cov --cov-fail-under=0
+          --cov-report=xml:reports/coverage.xml
+
+      - name: Upload e2e coverage artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-e2e
+          path: reports/.coverage
+          include-hidden-files: true
+          retention-days: 1
+
+  # ── Coverage merge & upload ───────────────────────────────────────────────
+  # Downloads all per-job .coverage files, combines them into one, generates
+  # a merged XML report, and uploads to Codecov with full coverage data.
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    needs:
+      - test-matrix
+      - integration-offline
+      - integration-ollama
+      - test-e2e
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-*
+          path: coverage-artifacts/
+
+      - name: Combine coverage data
+        id: combine_coverage
+        run: |
+          mkdir -p reports coverage-artifacts
+          mapfile -t coverage_files < <(find coverage-artifacts -name ".coverage" -type f 2>/dev/null || true)
+
+          if [ "${#coverage_files[@]}" -eq 0 ]; then
+            echo "No .coverage artifacts found. Skipping merged coverage generation."
+            echo "coverage_available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          i=0
+          for f in "${coverage_files[@]}"; do
+            cp "$f" "reports/.coverage.$i"
+            i=$((i + 1))
+          done
+
+          uv run coverage combine reports/
+          uv run coverage xml -o reports/coverage-merged.xml
+          uv run coverage report --skip-covered
+          echo "coverage_available=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload merged coverage to Codecov
+        if: steps.combine_coverage.outputs.coverage_available == 'true'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: reports/coverage-merged.xml
+          flags: merged
+          fail_ci_if_error: false

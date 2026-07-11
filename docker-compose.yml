@@ -1,0 +1,105 @@
+version: "3.9"
+
+services:
+  burp:
+    build: ./burp
+    container_name: burp
+    volumes:
+      - ./burp:/app
+    environment:
+      - DISPLAY=${DISPLAY}
+    network_mode: host
+
+  nmap_suite:
+    build:
+      context: ./nmap-suite
+      dockerfile: Dockerfile
+    image: pantest-nmap-suite
+    container_name: nmap-suite
+    working_dir: /tools
+    command: ["bash"]
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    volumes:
+      - ./nmap-suite:/tools
+    network_mode: host
+
+  recon:
+    build:
+      context: ./recon
+      dockerfile: Dockerfile
+    image: pantest-recon
+    container_name: recon
+    depends_on:
+      - nmap_suite
+    working_dir: /tools
+    command: ["bash"]
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    volumes:
+      - ./recon:/tools
+    network_mode: host
+
+  hackagent:
+    build: ./hackagent
+    image: pantest-hackagent
+    container_name: hackagent
+    working_dir: /app
+    command: ["bash"]
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    volumes:
+      - ./hackagent:/app
+    network_mode: host
+
+  autopentestx:
+    build: ./autopentestx
+    image: pantest-autopentestx
+    container_name: autopentestx
+    working_dir: /app
+    command: ["bash"]
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    volumes:
+      - ./autopentestx:/app
+    network_mode: host
+
+  inspector:
+    build: ./inspector
+    image: pantest-inspector
+    container_name: inspector
+    working_dir: /app
+    command: ["bash"]
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    environment:
+      - TERM=xterm-256color
+      - LANG=C.UTF-8
+    volumes:
+      - ./inspector:/app
+    network_mode: host
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama-gpu
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama-gpu:/root/.ollama
+
+  kali:
+    build: ./kali-tools
+    container_name: kali-tools
+    tty: true
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./kali-tools:/tools
