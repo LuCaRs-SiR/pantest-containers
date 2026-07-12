@@ -1,46 +1,81 @@
-<h1 class="neon-text chromatic fade-in">Dashboard</h1>
+<script>
+  import ProgressDial from '../components/ProgressDial.svelte';
+  import PriorityList from '../components/PriorityList.svelte';
+  import TeamPerformance from '../components/TeamPerformance.svelte';
+  import ChangeLog from '../components/ChangeLog.svelte';
+  import AIProjectAssistant from '../components/AIProjectAssistant.svelte';
 
-<div class="grid fade-in">
-  <div class="neon-card glass neon-glow">Nmap Scan</div>
-  <div class="neon-card glass">Recon Tools</div>
-  <div class="neon-card glass">Web Testing</div>
-  <div class="neon-card glass">AI Assistant</div>
-  <div class="neon-card glass">Raporty</div>
+  const tasks = [
+    { name: 'Integracja API z modułem płatności', priority: 'critical' },
+    { name: 'Poprawa wydajności dashboardu', priority: 'high' },
+    { name: 'Aktualizacja dokumentacji', priority: 'medium' },
+    { name: 'Testy jednostkowe modułu raportów', priority: 'low' }
+  ];
+
+  const team = [
+    { name: 'Anna K.', value: 92 },
+    { name: 'Marek W.', value: 78 },
+    { name: 'Kasia L.', value: 85 },
+    { name: 'Tomek Z.', value: 67 }
+  ];
+
+  const logEntries = [
+    { time: '10:42', event: 'Zadanie #12 przesunięte do QA' },
+    { time: '09:15', event: 'Dodano nowy moduł raportów' },
+    { time: '08:30', event: 'Sprint 14 rozpoczęty' },
+    { time: 'Wczoraj', event: 'Zamknięto 7 zgłoszeń' }
+  ];
+</script>
+
+<h1 class="neon-text chromatic fade-in">PULPIT ZARZĄDZANIA PROJEKTEM</h1>
+
+<div class="dashboard fade-in">
+  <div class="top-row">
+    <ProgressDial value={90} label="Progres Zadania" />
+    <PriorityList title="Lista Priorytetów" {tasks} />
+    <TeamPerformance members={team} />
+  </div>
+
+  <div class="bottom-row">
+    <ChangeLog entries={logEntries} />
+    <AIProjectAssistant />
+  </div>
 </div>
 
 <style>
   h1 {
     font-family: 'Orbitron', sans-serif;
-    font-size: 28px;
+    font-size: 26px;
     margin-bottom: 25px;
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+  .dashboard {
+    display: flex;
+    flex-direction: column;
     gap: 25px;
   }
 
-  .neon-card {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-    min-height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
+  .top-row {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 25px;
   }
 
-  @media (max-width: 1024px) {
-    .grid {
-      grid-template-columns: repeat(2, 1fr);
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+  }
+
+  @media (max-width: 1200px) {
+    .top-row {
+      grid-template-columns: 1fr 1fr;
     }
   }
 
-  @media (max-width: 640px) {
-    .grid {
+  @media (max-width: 900px) {
+    .top-row,
+    .bottom-row {
       grid-template-columns: 1fr;
     }
   }
