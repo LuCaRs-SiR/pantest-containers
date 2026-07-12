@@ -1,6 +1,7 @@
 <script lang="ts">
   import Terminal from './Terminal.svelte';
-  import { api } from '$lib/api';
+  import { nmapScan, reconScan, hackAgent, autopentestX, inspector } from '$lib/services';
+  import type { ToolOutput } from '$lib/types';
 
   let {
     title,
@@ -17,11 +18,20 @@
   let value = $state('');
   let output = $state('');
 
+  const handlers: Record<string, (value: string) => Promise<ToolOutput>> = {
+    '/api/nmap': nmapScan,
+    '/api/recon': reconScan,
+    '/api/hackagent': hackAgent,
+    '/api/autopentestx': autopentestX,
+    '/api/inspector': inspector
+  };
+
   async function run() {
     if (!value.trim()) return;
     output = `Running ${title.toLowerCase()}...`;
     try {
-      const res = await api<{ output: string }>(endpoint, 'POST', { [paramName]: value });
+      const handler = handlers[endpoint] ?? (async () => ({ output: 'Unknown tool', exit_code: 1 }));
+      const res = await handler(value);
       output = res.output;
     } catch (err: any) {
       output = `Error: ${err.message}`;

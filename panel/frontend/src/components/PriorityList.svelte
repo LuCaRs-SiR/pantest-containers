@@ -1,20 +1,22 @@
 <script lang="ts">
+  import type { PriorityTask } from '$lib/types';
+
   let {
     title = 'Lista Priorytetów',
     tasks = []
   }: {
     title?: string;
-    tasks?: { name: string; priority: 'critical' | 'high' | 'medium' | 'low' }[];
+    tasks?: PriorityTask[];
   } = $props();
 
-  const priorityLabel = {
+  const priorityLabel: Record<PriorityTask['priority'], string> = {
     critical: 'Krytyczne',
     high: 'Wysokie',
     medium: 'Średnie',
     low: 'Niskie'
   };
 
-  const priorityColor = {
+  const priorityColor: Record<PriorityTask['priority'], string> = {
     critical: 'critical',
     high: 'high',
     medium: 'medium',

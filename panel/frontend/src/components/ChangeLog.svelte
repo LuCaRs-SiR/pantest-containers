@@ -1,5 +1,7 @@
 <script lang="ts">
-  let { entries = [] }: { entries?: { time: string; event: string }[] } = $props();
+  import type { LogEntry } from '$lib/types';
+
+  let { entries = [] }: { entries?: LogEntry[] } = $props();
 </script>
 
 <div class="log neon-card glass">

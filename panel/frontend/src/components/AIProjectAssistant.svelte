@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { api } from '$lib/api';
+  import { askAI } from '$lib/services';
 
   let prompt = $state('');
   let messages = $state<{ user: string; ai: string }[]>([
@@ -16,7 +16,7 @@
     prompt = '';
     loading = true;
     try {
-      const res = await api<{ response: string }>('/api/ai', 'POST', { model: 'qwen2.5:14b-instruct', prompt: userPrompt });
+      const res = await askAI(userPrompt);
       messages = [...messages, { user: userPrompt, ai: res.response ?? '' }];
     } catch (err: any) {
       messages = [...messages, { user: userPrompt, ai: `Error: ${err.message}` }];

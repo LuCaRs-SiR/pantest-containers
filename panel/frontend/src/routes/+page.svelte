@@ -1,25 +1,26 @@
-<script>
+<script lang="ts">
   import ProgressDial from '../components/ProgressDial.svelte';
   import PriorityList from '../components/PriorityList.svelte';
   import TeamPerformance from '../components/TeamPerformance.svelte';
   import ChangeLog from '../components/ChangeLog.svelte';
   import AIProjectAssistant from '../components/AIProjectAssistant.svelte';
+  import type { PriorityTask, TeamMember, LogEntry } from '$lib/types';
 
-  const tasks = [
+  const tasks: PriorityTask[] = [
     { name: 'Integracja API z modułem płatności', priority: 'critical' },
     { name: 'Poprawa wydajności dashboardu', priority: 'high' },
     { name: 'Aktualizacja dokumentacji', priority: 'medium' },
     { name: 'Testy jednostkowe modułu raportów', priority: 'low' }
   ];
 
-  const team = [
+  const team: TeamMember[] = [
     { name: 'Anna K.', value: 92 },
     { name: 'Marek W.', value: 78 },
     { name: 'Kasia L.', value: 85 },
     { name: 'Tomek Z.', value: 67 }
   ];
 
-  const logEntries = [
+  const logEntries: LogEntry[] = [
     { time: '10:42', event: 'Zadanie #12 przesunięte do QA' },
     { time: '09:15', event: 'Dodano nowy moduł raportów' },
     { time: '08:30', event: 'Sprint 14 rozpoczęty' },

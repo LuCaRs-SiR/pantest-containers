@@ -1,8 +1,10 @@
 <script lang="ts">
+  import type { TeamMember } from '$lib/types';
+
   let {
     members = []
   }: {
-    members?: { name: string; value: number }[];
+    members?: TeamMember[];
   } = $props();
 </script>
 
