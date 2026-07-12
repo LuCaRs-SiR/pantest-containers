@@ -1,6 +1,4 @@
 <script lang="ts">
-  import Button from './Button.svelte';
-  import Input from './Input.svelte';
   import Terminal from './Terminal.svelte';
   import { api } from '$lib/api';
 
@@ -31,9 +29,27 @@
   }
 </script>
 
-<h1 class="text-3xl font-black text-cockpit-accent mb-6">{title}</h1>
-<div class="flex gap-2 mb-4">
-  <Input bind:value {placeholder} />
-  <Button onclick={run}>Uruchom</Button>
+<h1 class="neon-text fade-in">{title}</h1>
+<div class="tool fade-in">
+  <input bind:value {placeholder} />
+  <button class="neon-glow" onclick={run}>Uruchom</button>
 </div>
 <Terminal {output} />
+
+<style>
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 28px;
+    margin-bottom: 25px;
+  }
+
+  .tool {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+
+  input {
+    flex: 1;
+  }
+</style>

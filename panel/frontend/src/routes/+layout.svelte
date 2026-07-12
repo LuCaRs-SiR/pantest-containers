@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
   import Sidebar from '../components/Sidebar.svelte';
   import Topbar from '../components/Topbar.svelte';
   import '../app.css';
@@ -8,27 +8,20 @@
   <Sidebar />
   <div class="content">
     <Topbar />
-    <main class="p-6 cockpit-scrollbar">
-      <slot />
-    </main>
+    <slot />
   </div>
 </div>
 
 <style>
   .layout {
-    @apply flex h-screen bg-cockpit-bg text-cockpit-text overflow-hidden;
+    display: flex;
+    height: 100vh;
+    background: var(--bg-dark);
   }
   .content {
-    @apply flex-1 flex flex-col overflow-hidden relative;
-  }
-  .content::before {
-    content: '';
-    @apply absolute inset-0 pointer-events-none;
-    background:
-      radial-gradient(circle at 20% 30%, rgba(0, 175, 255, 0.06) 0%, transparent 40%),
-      radial-gradient(circle at 80% 70%, rgba(255, 0, 160, 0.06) 0%, transparent 40%);
-  }
-  main {
-    @apply flex-1 overflow-y-auto relative z-10;
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: radial-gradient(circle at top left, #0A0A0F 0%, #111118 100%);
   }
 </style>

@@ -1,68 +1,46 @@
-<script lang="ts">
-  import DashboardPanel from '../components/DashboardPanel.svelte';
-  import ActivityList from '../components/ActivityList.svelte';
-  import MiniChat from '../components/MiniChat.svelte';
-  import MiniTerminal from '../components/MiniTerminal.svelte';
-  import SystemLogs from '../components/SystemLogs.svelte';
-  import { Network, Search, Globe } from '@lucide/svelte';
+<h1 class="neon-text fade-in">Dashboard</h1>
 
-  const terminalOutput = `Nmap Scan Report for target.com
-PORT    STATE SERVICE
-22/tcp  open  ssh
-80/tcp  open  http
-443/tcp open  https
+<div class="grid fade-in">
+  <div class="neon-card">Nmap Scan</div>
+  <div class="neon-card">Recon Tools</div>
+  <div class="neon-card">Web Testing</div>
+  <div class="neon-card">AI Assistant</div>
+  <div class="neon-card">Raporty</div>
+</div>
 
-Service detection performed.`;
-
-  const systemLogs = [
-    '[00:12:01] nmap-suite container ready',
-    '[00:12:03] recon subfinder installed',
-    '[00:12:05] ai-gateway connected to ollama',
-    '[00:12:07] dashboard initialized'
-  ];
-
-  const activities = [
-    { time: '2 min ago', message: 'Nmap scan completed on target.com', type: 'success' as const },
-    { time: '5 min ago', message: 'Recon found 12 subdomains', type: 'info' as const },
-    { time: '12 min ago', message: 'AI flagged critical CVE-2021-44228', type: 'warning' as const }
-  ];
-
-  function startScan(tool: string) {
-    console.log('Start', tool);
+<style>
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 28px;
+    margin-bottom: 25px;
   }
-</script>
 
-<h1 class="text-3xl font-black text-cockpit-accent glow-text font-display mb-6">Dashboard</h1>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+  }
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-  <DashboardPanel
-    title="Nmap Scan"
-    description="Scan network ports and services"
-    icon={Network}
-    onstart={() => startScan('nmap')}
-  />
-  <DashboardPanel
-    title="Recon Tools"
-    description="Discover subdomains and attack surface"
-    icon={Search}
-    variant="pink"
-    onstart={() => startScan('recon')}
-  />
-  <DashboardPanel
-    title="Web Testing"
-    description="Automated web vulnerability checks"
-    icon={Globe}
-    onstart={() => startScan('web')}
-  />
-</div>
+  .neon-card {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-  <div class="grid grid-cols-1 gap-5">
-    <SystemLogs logs={systemLogs} />
-    <MiniTerminal output={terminalOutput} />
-  </div>
-  <div class="grid grid-cols-1 gap-5">
-    <ActivityList {activities} />
-    <MiniChat />
-  </div>
-</div>
+  @media (max-width: 1024px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
