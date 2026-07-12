@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--cockpit-bg: #0A0A0F;
+		--cockpit-panel: #111118;
+		--cockpit-accent: #00AFFF;
+		--cockpit-danger: #FF0055;
+		--cockpit-text: #EAEAEA;
+		--cockpit-muted: #9A9A9A;
+		--cockpit-terminal: #000000;
+		--cockpit-terminal-green: #00FF7F;
+	}
+
+	html,
+	body,
+	#svelte {
+		height: 100%;
+	}
+}
+
+@layer components {
+	.cockpit-scrollbar::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	.cockpit-scrollbar::-webkit-scrollbar-track {
+		background: #111118;
+	}
+	.cockpit-scrollbar::-webkit-scrollbar-thumb {
+		background: #333;
+		border-radius: 4px;
+	}
+	.cockpit-scrollbar::-webkit-scrollbar-thumb:hover {
+		background: var(--cockpit-accent);
+	}
+}

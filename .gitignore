@@ -27,3 +27,11 @@ docker-compose.override.yml
 # Editors
 *.swp
 *~
+
+# Node / SvelteKit
+node_modules/
+.svelte-kit/
+build/
+*.local
+*.lock
+!package-lock.json

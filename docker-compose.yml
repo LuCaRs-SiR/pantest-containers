@@ -150,8 +150,6 @@ services:
     depends_on:
       - panel-backend
     restart: unless-stopped
-    volumes:
-      - ./panel/frontend:/app
     networks:
       - pentest-net
 
