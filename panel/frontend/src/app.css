@@ -6,7 +6,11 @@
 	:root {
 		--cockpit-bg: #0A0A0F;
 		--cockpit-panel: #111118;
+		--cockpit-panel-light: #1A1A24;
 		--cockpit-accent: #00AFFF;
+		--cockpit-accent-glow: rgba(0, 175, 255, 0.4);
+		--cockpit-pink: #FF00A0;
+		--cockpit-pink-glow: rgba(255, 0, 160, 0.4);
 		--cockpit-danger: #FF0055;
 		--cockpit-text: #EAEAEA;
 		--cockpit-muted: #9A9A9A;
@@ -35,5 +39,22 @@
 	}
 	.cockpit-scrollbar::-webkit-scrollbar-thumb:hover {
 		background: var(--cockpit-accent);
+	}
+
+	.glow-card {
+		@apply bg-cockpit-panel border border-white/5 rounded-xl transition-all duration-300;
+	}
+	.glow-card:hover {
+		@apply border-cockpit-accent/40 shadow-glow-accent;
+	}
+	.glow-card-pink:hover {
+		@apply border-cockpit-pink/40 shadow-glow-pink;
+	}
+
+	.glow-text {
+		text-shadow: 0 0 8px var(--cockpit-accent-glow);
+	}
+	.glow-text-pink {
+		text-shadow: 0 0 8px var(--cockpit-pink-glow);
 	}
 }
