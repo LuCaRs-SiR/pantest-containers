@@ -19,9 +19,16 @@
     @apply flex h-screen bg-cockpit-bg text-cockpit-text overflow-hidden;
   }
   .content {
-    @apply flex-1 flex flex-col overflow-hidden;
+    @apply flex-1 flex flex-col overflow-hidden relative;
+  }
+  .content::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(0, 175, 255, 0.06) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(255, 0, 160, 0.06) 0%, transparent 40%);
   }
   main {
-    @apply flex-1 overflow-y-auto;
+    @apply flex-1 overflow-y-auto relative z-10;
   }
 </style>

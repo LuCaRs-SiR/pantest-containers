@@ -32,7 +32,7 @@ Service detection performed.`;
   }
 </script>
 
-<h1 class="text-3xl font-black text-cockpit-accent glow-text mb-6">Dashboard</h1>
+<h1 class="text-3xl font-black text-cockpit-accent glow-text font-display mb-6">Dashboard</h1>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
   <DashboardPanel

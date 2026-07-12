@@ -26,42 +26,87 @@
 
 <nav class="sidebar" aria-label="Główna nawigacja">
   <div class="logo">
-    <span class="text-cockpit-accent glow-text">PENTEST</span>
-    <span>COCKPIT</span>
+    <span class="logo-accent glow-text">PENTEST</span>
+    <span class="logo-text">COCKPIT</span>
   </div>
 
-  <ul class="flex flex-col gap-1">
-    {#each links as { href, label, icon }}
-      <li>
-        <a
-          {href}
-          class={clsx(
-            'nav-link',
-            $page.url.pathname === href && 'nav-link-active'
-          )}
-        >
-          <svelte:component this={icon} size={18} />
-          {label}
-        </a>
-      </li>
-    {/each}
-  </ul>
+  <div class="nav-section">
+    <span class="nav-label">MENU</span>
+    <ul class="nav-list">
+      {#each links as { href, label, icon }}
+        <li class="nav-item">
+          <a
+            {href}
+            class={clsx(
+              'nav-link',
+              $page.url.pathname === href && 'nav-link-active'
+            )}
+          >
+            <span class="nav-icon">
+              <svelte:component this={icon} size={18} />
+            </span>
+            {label}
+          </a>
+        </li>
+      {/each}
+    </ul>
+  </div>
+
+  <div class="sidebar-glow"></div>
 </nav>
 
 <style>
   .sidebar {
-    @apply w-64 bg-cockpit-panel p-5 flex flex-col gap-6 h-screen shrink-0 border-r border-cockpit-accent/20;
+    @apply relative w-64 h-screen shrink-0 p-6 flex flex-col gap-8 overflow-hidden;
+    background: linear-gradient(180deg, rgba(10, 10, 15, 0.95) 0%, rgba(17, 17, 24, 0.92) 100%);
+    border-right: 1px solid rgba(0, 175, 255, 0.22);
+    box-shadow: 4px 0 24px rgba(0, 175, 255, 0.08);
   }
   .logo {
-    @apply text-2xl font-black leading-none tracking-tight text-cockpit-text;
+    @apply relative font-display text-2xl font-black leading-none tracking-wider;
   }
-  .logo span:first-child {
-    @apply text-cockpit-accent;
+  .logo-accent {
+    @apply text-cockpit-accent block;
+  }
+  .logo-text {
+    @apply text-cockpit-text tracking-widest;
+  }
+  .nav-section {
+    @apply flex flex-col gap-3;
+  }
+  .nav-label {
+    @apply text-xs font-bold text-cockpit-muted/60 tracking-[0.2em] px-4;
+  }
+  .nav-list {
+    @apply flex flex-col gap-1;
   }
   .nav-link {
-    @apply flex items-center gap-3 text-cockpit-muted text-sm font-medium py-3 px-4 rounded-xl transition-all hover:text-cockpit-accent hover:bg-cockpit-accent/10;
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-cockpit-muted text-sm font-semibold transition-all duration-300;
+  }
+  .nav-link:hover {
+    @apply text-cockpit-accent bg-cockpit-accent/10;
+    box-shadow: 0 0 14px rgba(0, 175, 255, 0.12);
+  }
+  .nav-icon {
+    @apply text-cockpit-muted transition-colors;
+  }
+  .nav-link:hover .nav-icon {
+    @apply text-cockpit-accent;
   }
   .nav-link-active {
-    @apply text-cockpit-accent bg-cockpit-accent/10 border-l-4 border-cockpit-accent shadow-glow-accent;
+    @apply text-cockpit-accent bg-cockpit-accent/10;
+    border-left: 3px solid var(--cockpit-accent);
+    box-shadow:
+      0 0 14px rgba(0, 175, 255, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  .nav-link-active .nav-icon {
+    @apply text-cockpit-accent;
+    filter: drop-shadow(0 0 6px var(--cockpit-accent-glow));
+  }
+  .sidebar-glow {
+    @apply absolute -right-24 top-1/4 w-48 h-48 rounded-full pointer-events-none;
+    background: radial-gradient(circle, rgba(0, 175, 255, 0.12) 0%, transparent 70%);
+    filter: blur(40px);
   }
 </style>

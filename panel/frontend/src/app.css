@@ -5,17 +5,23 @@
 @layer base {
 	:root {
 		--cockpit-bg: #0A0A0F;
-		--cockpit-panel: #111118;
+		--cockpit-bg-rgb: 10, 10, 15;
+		--cockpit-panel: rgba(17, 17, 24, 0.85);
+		--cockpit-panel-solid: #111118;
 		--cockpit-panel-light: #1A1A24;
 		--cockpit-accent: #00AFFF;
-		--cockpit-accent-glow: rgba(0, 175, 255, 0.4);
+		--cockpit-accent-glow: rgba(0, 175, 255, 0.55);
 		--cockpit-pink: #FF00A0;
-		--cockpit-pink-glow: rgba(255, 0, 160, 0.4);
+		--cockpit-pink-glow: rgba(255, 0, 160, 0.55);
 		--cockpit-danger: #FF0055;
 		--cockpit-text: #EAEAEA;
 		--cockpit-muted: #9A9A9A;
 		--cockpit-terminal: #000000;
 		--cockpit-terminal-green: #00FF7F;
+
+		--font-display: 'Orbitron', sans-serif;
+		--font-ui: 'Rajdhani', 'Exo 2', sans-serif;
+		--font-mono: 'Share Tech Mono', monospace;
 	}
 
 	html,
@@ -23,9 +29,27 @@
 	#svelte {
 		height: 100%;
 	}
+
+	body {
+		font-family: var(--font-ui);
+		background:
+			radial-gradient(circle at 10% 20%, rgba(0, 175, 255, 0.08) 0%, transparent 35%),
+			radial-gradient(circle at 90% 80%, rgba(255, 0, 160, 0.08) 0%, transparent 35%),
+			var(--cockpit-bg);
+	}
 }
 
 @layer components {
+	.font-display {
+		font-family: var(--font-display);
+	}
+	.font-ui {
+		font-family: var(--font-ui);
+	}
+	.font-mono {
+		font-family: var(--font-mono);
+	}
+
 	.cockpit-scrollbar::-webkit-scrollbar {
 		width: 8px;
 		height: 8px;
@@ -41,20 +65,96 @@
 		background: var(--cockpit-accent);
 	}
 
+	.glass-panel {
+		background: rgba(17, 17, 24, 0.72);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border: 1px solid rgba(0, 175, 255, 0.22);
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.35),
+			0 4px 24px rgba(0, 0, 0, 0.45),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	}
+
+	.glass-panel-pink {
+		border-color: rgba(255, 0, 160, 0.22);
+	}
+
 	.glow-card {
-		@apply bg-cockpit-panel border border-white/5 rounded-xl transition-all duration-300;
+		@apply glass-panel rounded-xl transition-all duration-300;
 	}
 	.glow-card:hover {
-		@apply border-cockpit-accent/40 shadow-glow-accent;
+		border-color: rgba(0, 175, 255, 0.55);
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.35),
+			0 8px 32px rgba(0, 175, 255, 0.18),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
+
 	.glow-card-pink:hover {
-		@apply border-cockpit-pink/40 shadow-glow-pink;
+		border-color: rgba(255, 0, 160, 0.55);
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.35),
+			0 8px 32px rgba(255, 0, 160, 0.18),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	.glow-text {
-		text-shadow: 0 0 8px var(--cockpit-accent-glow);
+		text-shadow: 0 0 8px var(--cockpit-accent-glow), 0 0 16px var(--cockpit-accent-glow);
 	}
 	.glow-text-pink {
-		text-shadow: 0 0 8px var(--cockpit-pink-glow);
+		text-shadow: 0 0 8px var(--cockpit-pink-glow), 0 0 16px var(--cockpit-pink-glow);
+	}
+
+	.neon-border {
+		position: relative;
+	}
+	.neon-border::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		padding: 1px;
+		background: linear-gradient(135deg, var(--cockpit-accent), var(--cockpit-pink));
+		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+		pointer-events: none;
+	}
+
+	@keyframes fade-in-up {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	.animate-fade-in-up {
+		animation: fade-in-up 0.4s ease-out forwards;
+	}
+
+	@keyframes pulse-glow {
+		0%, 100% {
+			box-shadow: 0 0 8px var(--cockpit-accent-glow);
+		}
+		50% {
+			box-shadow: 0 0 18px var(--cockpit-accent-glow);
+		}
+	}
+	.animate-pulse-glow {
+		animation: pulse-glow 2.5s ease-in-out infinite;
+	}
+
+	@keyframes typing {
+		from { width: 0; }
+		to { width: 100%; }
+	}
+	.animate-typing {
+		overflow: hidden;
+		white-space: nowrap;
+		animation: typing 1.5s steps(40, end);
 	}
 }
