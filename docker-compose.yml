@@ -1,5 +1,8 @@
 version: "3.9"
 
+# UWAGA: Używaj tych narzędzi wyłącznie do celów defensywnych,
+# testowania własnych systemów lub systemów, do których masz pisemną zgodę.
+
 services:
   burp:
     build: ./burp
@@ -9,6 +12,7 @@ services:
     environment:
       - DISPLAY=${DISPLAY}
     network_mode: host
+    restart: unless-stopped
 
   nmap_suite:
     build:
@@ -17,7 +21,7 @@ services:
     image: pantest-nmap-suite
     container_name: nmap-suite
     working_dir: /tools
-    command: ["bash"]
+    command: ["tail", "-f", "/dev/null"]
     tty: true
     stdin_open: true
     restart: unless-stopped
@@ -34,7 +38,7 @@ services:
     depends_on:
       - nmap_suite
     working_dir: /tools
-    command: ["bash"]
+    command: ["tail", "-f", "/dev/null"]
     tty: true
     stdin_open: true
     restart: unless-stopped
@@ -47,7 +51,7 @@ services:
     image: pantest-hackagent
     container_name: hackagent
     working_dir: /app
-    command: ["bash"]
+    command: ["tail", "-f", "/dev/null"]
     tty: true
     stdin_open: true
     restart: unless-stopped
@@ -60,7 +64,7 @@ services:
     image: pantest-autopentestx
     container_name: autopentestx
     working_dir: /app
-    command: ["bash"]
+    command: ["tail", "-f", "/dev/null"]
     tty: true
     stdin_open: true
     restart: unless-stopped
@@ -73,7 +77,7 @@ services:
     image: pantest-inspector
     container_name: inspector
     working_dir: /app
-    command: ["bash"]
+    command: ["tail", "-f", "/dev/null"]
     tty: true
     stdin_open: true
     restart: unless-stopped
@@ -87,6 +91,7 @@ services:
   ollama:
     image: ollama/ollama
     container_name: ollama-gpu
+    restart: unless-stopped
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
@@ -94,12 +99,75 @@ services:
       - "11434:11434"
     volumes:
       - ./ollama-gpu:/root/.ollama
+    networks:
+      - pentest-net
+
+  ai-gateway:
+    build: ./ai-gateway
+    image: pantest-ai-gateway
+    container_name: ai-gateway
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+    ports:
+      - "8000:8000"
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    volumes:
+      - ./ai-gateway:/app
+    networks:
+      - pentest-net
+
+  panel-backend:
+    build: ./panel/backend
+    image: pantest-panel-backend
+    container_name: panel-backend
+    environment:
+      - AI_GATEWAY_URL=http://ai-gateway:8000
+    ports:
+      - "8001:8001"
+    depends_on:
+      - ai-gateway
+      - nmap_suite
+      - recon
+      - inspector
+      - hackagent
+      - autopentestx
+    restart: unless-stopped
+    volumes:
+      - ./panel/backend:/app
+      - ./logs:/logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - pentest-net
+
+  panel-frontend:
+    build: ./panel/frontend
+    image: pantest-panel-frontend
+    container_name: panel-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - panel-backend
+    restart: unless-stopped
+    volumes:
+      - ./panel/frontend:/app
+    networks:
+      - pentest-net
 
   kali:
     build: ./kali-tools
+    image: pantest-kali-tools
     container_name: kali-tools
+    working_dir: /tools
+    command: ["tail", "-f", "/dev/null"]
     tty: true
+    stdin_open: true
     restart: unless-stopped
     network_mode: host
     volumes:
       - ./kali-tools:/tools
+
+networks:
+  pentest-net:
+    driver: bridge
