@@ -21,7 +21,7 @@
   }
 </script>
 
-<div class="chat neon-card">
+<div class="chat neon-card glass">
   {#each messages as m}
     <div class="bubble user neon-border">{m.user}</div>
     <div class="bubble ai neon-border">{m.ai}</div>

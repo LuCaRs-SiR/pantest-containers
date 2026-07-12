@@ -2,7 +2,7 @@
   let { output = '' }: { output?: string } = $props();
 </script>
 
-<pre class="terminal neon-border">{output}</pre>
+<pre class="terminal neon-border neon-glow">{output}</pre>
 
 <style>
   .terminal {
@@ -12,7 +12,6 @@
     font-family: 'Share Tech Mono', monospace;
     font-size: 15px;
     border-radius: var(--radius);
-    box-shadow: 0 0 20px var(--accent-cyan);
     white-space: pre-wrap;
     overflow: auto;
   }

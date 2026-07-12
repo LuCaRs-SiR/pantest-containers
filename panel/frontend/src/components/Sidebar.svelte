@@ -1,5 +1,5 @@
-<nav class="sidebar neon-border">
-  <h1 class="logo neon-text">PENTEST<br>COCKPIT</h1>
+<nav class="sidebar neon-border glass">
+  <h1 class="logo neon-text chromatic">PENTEST<br>COCKPIT</h1>
 
   <a href="/">Dashboard</a>
   <a href="/nmap">Nmap</a>
@@ -16,7 +16,6 @@
     width: 260px;
     height: 100vh;
     padding: 25px;
-    background: var(--bg-panel);
     display: flex;
     flex-direction: column;
     gap: 20px;

@@ -1,11 +1,11 @@
-<h1 class="neon-text fade-in">Dashboard</h1>
+<h1 class="neon-text chromatic fade-in">Dashboard</h1>
 
 <div class="grid fade-in">
-  <div class="neon-card">Nmap Scan</div>
-  <div class="neon-card">Recon Tools</div>
-  <div class="neon-card">Web Testing</div>
-  <div class="neon-card">AI Assistant</div>
-  <div class="neon-card">Raporty</div>
+  <div class="neon-card glass neon-glow">Nmap Scan</div>
+  <div class="neon-card glass">Recon Tools</div>
+  <div class="neon-card glass">Web Testing</div>
+  <div class="neon-card glass">AI Assistant</div>
+  <div class="neon-card glass">Raporty</div>
 </div>
 
 <style>
@@ -30,6 +30,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
   }
 
   @media (max-width: 1024px) {

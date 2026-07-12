@@ -5,7 +5,7 @@
 :root {
   --bg-dark: #05050A;
   --bg-panel: #0D0D14;
-  --bg-glass: rgba(255, 255, 255, 0.03);
+  --bg-glass: rgba(255, 255, 255, 0.04);
 
   --accent-cyan: #00E5FF;
   --accent-blue: #0066FF;
@@ -19,6 +19,7 @@
 
   --radius: 12px;
   --blur: 18px;
+  --glow: 25px;
 }
 
 html,
@@ -93,7 +94,8 @@ pre {
   border: 1px solid var(--accent-cyan);
   box-shadow:
     0 0 10px var(--accent-cyan),
-    inset 0 0 10px var(--accent-blue);
+    0 0 20px var(--accent-blue),
+    inset 0 0 10px var(--accent-purple);
   border-radius: var(--radius);
 }
 
@@ -118,7 +120,9 @@ pre {
 
 .neon-text {
   color: var(--accent-cyan);
-  text-shadow: 0 0 10px var(--accent-cyan);
+  text-shadow:
+    0 0 10px var(--accent-cyan),
+    0 0 20px var(--accent-magenta);
 }
 
 .neon-glow {
@@ -131,13 +135,49 @@ pre {
   100% { box-shadow: 0 0 10px var(--accent-cyan); }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.chromatic {
+  text-shadow:
+    2px 0 var(--accent-magenta),
+    -2px 0 var(--accent-blue);
+}
+
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.neon-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--accent-cyan),
+    var(--accent-blue),
+    var(--accent-magenta)
+  );
+  border-radius: var(--radius);
+}
+
+.neon-separator {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent-cyan),
+    var(--accent-magenta),
+    transparent
+  );
+  margin: 20px 0;
 }
 
 .fade-in {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .cockpit-scrollbar::-webkit-scrollbar {
