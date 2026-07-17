@@ -35,6 +35,23 @@ docker compose up -d panel
 
 Domyślny adres Ollama jest ustawiony w zmiennej środowiskowej `OLLAMA_URL`.
 
+Domyślny model AI Gateway jest ustawiony przez `OLLAMA_MODEL` na:
+
+`qwen2.5-coder:7b`
+
+## Auto-start modelu Qwen przy starcie panelu
+
+W `docker-compose.yml` skonfigurowane są:
+
+- `ollama` z `gpus: all` (uruchomienie z akceleracją GPU)
+- `ollama-init` (jednorazowy bootstrap), który:
+	- czeka na gotowość Ollama,
+	- wykonuje `pull` modelu `qwen2.5-coder:7b`,
+	- wykonuje warmup modelu z `keep_alive=24h`, aby model utrzymywał się w pamięci GPU.
+
+Dzięki temu po uruchomieniu panelu model Qwen jest automatycznie przygotowany
+do obsługi zapytań bez ręcznego pull/ping.
+
 W `docker-compose.yml` usługa `panel` jest skonfigurowana z wartością:
 
 ```bash
