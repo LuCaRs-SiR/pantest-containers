@@ -3,7 +3,7 @@
 
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
+  const offset = $derived(circumference - (value / 100) * circumference);
 </script>
 
 <div class="dial neon-card glass">

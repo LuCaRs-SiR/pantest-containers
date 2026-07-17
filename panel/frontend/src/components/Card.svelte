@@ -9,7 +9,7 @@
   {/if}
 </a>
 
-<style>
+<style lang="postcss">
   .card {
     @apply block p-6 bg-cockpit-panel rounded-xl border border-white/5 transition-all hover:border-cockpit-accent/50 hover:shadow-[0_0_15px_rgba(0,175,255,0.15)] hover:-translate-y-1;
   }

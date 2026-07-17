@@ -8,7 +8,7 @@
   {/each}
 </div>
 
-<style>
+<style lang="postcss">
   .log-viewer {
     @apply bg-cockpit-terminal p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto border border-cockpit-accent/30;
   }

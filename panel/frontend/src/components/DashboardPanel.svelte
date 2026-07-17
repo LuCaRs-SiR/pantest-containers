@@ -34,7 +34,7 @@
   </div>
 </div>
 
-<style>
+<style lang="postcss">
   .dashboard-panel {
     @apply relative p-6 flex flex-col justify-between min-h-[180px] overflow-hidden;
   }

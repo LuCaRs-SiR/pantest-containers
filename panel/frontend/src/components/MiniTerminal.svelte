@@ -10,7 +10,7 @@
   <pre class="terminal cockpit-scrollbar font-mono"><code>{output || '$ ready...'}</code></pre>
 </div>
 
-<style>
+<style lang="postcss">
   .mini-terminal {
     @apply p-4 h-full flex flex-col;
   }

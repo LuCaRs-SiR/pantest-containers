@@ -45,7 +45,7 @@
   </div>
 </div>
 
-<style>
+<style lang="postcss">
   .mini-chat {
     @apply p-4 h-full flex flex-col;
   }

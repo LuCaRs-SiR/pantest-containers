@@ -20,7 +20,7 @@
   {/if}
 </button>
 
-<style>
+<style lang="postcss">
   .btn {
     @apply relative px-6 py-2.5 rounded-lg font-display font-bold text-sm tracking-wider uppercase overflow-hidden transition-all duration-300;
   }

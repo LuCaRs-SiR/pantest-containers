@@ -32,7 +32,7 @@
   </ul>
 </div>
 
-<style>
+<style lang="postcss">
   .activity-list {
     @apply p-4 h-full;
   }

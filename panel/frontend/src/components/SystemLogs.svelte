@@ -14,7 +14,7 @@
   </div>
 </div>
 
-<style>
+<style lang="postcss">
   .system-logs {
     @apply p-4 h-full flex flex-col;
   }

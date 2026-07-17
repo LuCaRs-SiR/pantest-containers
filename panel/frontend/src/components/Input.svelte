@@ -21,7 +21,7 @@
   <input bind:value {id} {placeholder} {onkeydown} class="input" />
 </div>
 
-<style>
+<style lang="postcss">
   .input {
     @apply w-full px-4 py-2.5 bg-cockpit-bg/80 border border-white/10 rounded-lg text-cockpit-text placeholder-cockpit-muted/60 focus:border-cockpit-accent focus:outline-none font-ui;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
