@@ -14,5 +14,5 @@ class Command(BaseModel):
 
 
 class Prompt(BaseModel):
-    model: str = "qwen2.5:14b-instruct"
+    model: str = "qwen2.5-coder:7b"
     prompt: str
