@@ -9,6 +9,10 @@ class Domain(BaseModel):
     domain: str
 
 
+class Command(BaseModel):
+    command: str
+
+
 class Prompt(BaseModel):
     model: str = "qwen2.5:14b-instruct"
     prompt: str

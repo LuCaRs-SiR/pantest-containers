@@ -7,9 +7,17 @@ export interface ToolOutput {
   exit_code: number;
 }
 
+export interface ContainerStatus {
+  exists: boolean;
+  status: string;
+  running: boolean;
+  started_at?: string;
+}
+
 export interface StatusResponse {
   ai_gateway: Record<string, unknown>;
   backend: string;
+  containers: Record<string, ContainerStatus>;
 }
 
 export interface ReportsResponse {

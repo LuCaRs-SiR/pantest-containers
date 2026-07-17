@@ -1,3 +1,3 @@
-from .requests import Prompt, Target, Domain
+from .requests import Prompt, Target, Domain, Command
 
-__all__ = ["Prompt", "Target", "Domain"]
+__all__ = ["Prompt", "Target", "Domain", "Command"]

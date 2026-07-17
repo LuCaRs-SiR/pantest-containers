@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.schemas import Target, Domain
+from app.schemas import Target, Domain, Command
 from app.services import run_in_container
 
 router = APIRouter(prefix="/api", tags=["tools"])
@@ -22,12 +22,26 @@ def hackagent(payload: Target):
 
 @router.post("/autopentestx")
 def autopentestx(payload: Target):
-    return run_in_container("autopentestx", ["python3", "/app/main.py", "--version"])
+    return run_in_container(
+        "autopentestx", ["python3", "/app/main.py", "--version"]
+    )
 
 
 @router.post("/inspector")
 def inspector(payload: Target):
-    return run_in_container("inspector", ["python3", "/app/core/inspector.py", "-h"])
+    return run_in_container(
+        "inspector", ["python3", "/app/core/inspector.py", "-h"]
+    )
+
+
+@router.post("/burp")
+def burp(payload: Command):
+    return run_in_container("burp", ["bash", "-lc", payload.command])
+
+
+@router.post("/kali")
+def kali(payload: Command):
+    return run_in_container("kali-tools", ["bash", "-lc", payload.command])
 
 
 @router.get("/reports")

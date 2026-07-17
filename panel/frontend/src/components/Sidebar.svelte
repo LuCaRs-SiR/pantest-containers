@@ -3,24 +3,28 @@
   import { clsx } from '$lib/utils';
   import {
     LayoutDashboard,
-    CheckSquare,
-    Database,
-    Users,
-    CalendarDays,
+    Shield,
+    Search,
+    Bot,
+    WandSparkles,
+    Phone,
+    AppWindow,
+    Terminal,
     BrainCircuit,
-    Bug,
     BarChart3
   } from '@lucide/svelte';
 
   const links = [
-    { href: '/', label: 'Główny Pulpit', icon: LayoutDashboard },
-    { href: '/tasks', label: 'Zadania', icon: CheckSquare },
-    { href: '/resources', label: 'Zasoby', icon: Database },
-    { href: '/team', label: 'Zespół Projektowy', icon: Users },
-    { href: '/timeline', label: 'Oś Czasu (Gantt)', icon: CalendarDays },
-    { href: '/ai', label: 'Narzędzia AI', icon: BrainCircuit },
-    { href: '/issues', label: 'Zgłoszenia (Błędy)', icon: Bug },
-    { href: '/reports', label: 'Analiza i Raporty', icon: BarChart3 }
+    { href: '/', label: 'Pulpit', icon: LayoutDashboard },
+    { href: '/nmap', label: 'Nmap', icon: Shield },
+    { href: '/recon', label: 'Recon', icon: Search },
+    { href: '/hackagent', label: 'HackAgent', icon: Bot },
+    { href: '/autopentestx', label: 'AutoPentestX', icon: WandSparkles },
+    { href: '/inspector', label: 'Inspector', icon: Phone },
+    { href: '/burp', label: 'Burp', icon: AppWindow },
+    { href: '/kali', label: 'Kali Tools', icon: Terminal },
+    { href: '/ai', label: 'AI Gateway', icon: BrainCircuit },
+    { href: '/reports', label: 'Status i Raporty', icon: BarChart3 }
   ];
 </script>
 

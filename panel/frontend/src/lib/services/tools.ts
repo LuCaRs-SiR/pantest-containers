@@ -21,6 +21,14 @@ export function inspector(target: string) {
   return api<ToolOutput>('/api/inspector', 'POST', { target });
 }
 
+export function burp(command: string) {
+  return api<ToolOutput>('/api/burp', 'POST', { command });
+}
+
+export function kali(command: string) {
+  return api<ToolOutput>('/api/kali', 'POST', { command });
+}
+
 export function getStatus() {
   return api<StatusResponse>('/api/status', 'GET');
 }

@@ -7,6 +7,9 @@ services:
   burp:
     build: ./burp
     container_name: burp
+    command: ["tail", "-f", "/dev/null"]
+    tty: true
+    stdin_open: true
     volumes:
       - ./burp:/app
     environment:
@@ -133,6 +136,8 @@ services:
       - inspector
       - hackagent
       - autopentestx
+      - burp
+      - kali
     restart: unless-stopped
     volumes:
       - ./panel/backend:/app

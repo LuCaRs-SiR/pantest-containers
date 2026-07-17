@@ -1,6 +1,6 @@
 <script lang="ts">
   import Terminal from './Terminal.svelte';
-  import { nmapScan, reconScan, hackAgent, autopentestX, inspector } from '$lib/services';
+  import { nmapScan, reconScan, hackAgent, autopentestX, inspector, burp, kali } from '$lib/services';
   import type { ToolOutput } from '$lib/types';
 
   let {
@@ -23,7 +23,9 @@
     '/api/recon': reconScan,
     '/api/hackagent': hackAgent,
     '/api/autopentestx': autopentestX,
-    '/api/inspector': inspector
+    '/api/inspector': inspector,
+    '/api/burp': burp,
+    '/api/kali': kali
   };
 
   async function run() {
