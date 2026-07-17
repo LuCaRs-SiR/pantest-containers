@@ -158,7 +158,7 @@ services:
     image: pantest-kali-tools
     container_name: kali-tools
     working_dir: /tools
-    command: ["tail", "-f", "/dev/null"]
+    command: ["bash"]
     tty: true
     stdin_open: true
     restart: unless-stopped

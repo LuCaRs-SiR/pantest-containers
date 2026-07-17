@@ -1,38 +1,125 @@
 # Pentest Containers
 
-## Uruchamianie
+Modularny, konteneryzowany zestaw narzędzi pentestowych do rozpoznania, automatyzacji i inspekcji.
 
-Ten projekt buduje narzędzia pentestowe w osobnych kontenerach.
+Ten projekt jest zbudowany jako zbiór niezależnych kontenerów, które można uruchamiać osobno lub razem przez `docker compose`. Każdy moduł ma własny katalog, Dockerfile oraz lokalny kod źródłowy, aby zapewnić skalowalność i szybki rozwój.
 
-Domyślnie używamy `docker compose`, ale w niektórych środowiskach klient Docker wymaga niższej wersji API niż serwer.
+## Co znajduje się w repozytorium
 
-Jeżeli `docker compose` zwraca błąd:
+- `docker-compose.yml` — główny orchestrator wszystkich usług
+- `nmap-suite/` — kontener z narzędziami do skanowania sieci
+- `recon/` — kontener z narzędziami do rozpoznania powierzchni ataku
+- `hackagent/` — kontener HackAgent AI/automation
+- `autopentestx/` — kontener AutoPentestX
+- `inspector/` — kontener Inspector
+- `ollama-gpu/` — lokalny katalog stanu Ollama i konfiguracja GPU
+- `ai-gateway/` — FastAPI wrapper dla lokalnego serwera Ollama i modeli AI
+- `panel/backend/` — backend FastAPI dla panelu sterowania, logów i integracji AI
+- `panel/frontend/` — SvelteKit frontend do obsługi panelu sterowania
+- `kali-tools/` — kontener z narzędziami Kali
+- `burp/` — opcjonalny kontener Burp Suite
+- `LICENSE` — licencja open-source MIT
+- `ROADMAP.md` — plan dalszego rozwoju projektu
 
-> client version 1.43 is too old. Minimum supported API version is 1.44
+## Cel projektu
 
-to uruchamiaj polecenia z nadpisanym API:
+To repozytorium ma być profesjonalnym fundamentem środowiska pentestowego:
+
+- modularne kontenery narzędziowe
+- centralne zarządzanie przez `docker compose`
+- możliwości integracji z AI i lokalnym modelem Ollama
+- ścieżka rozwoju w kierunku panelu sterowania, API i raportowania
+
+## Wymagania
+
+- Docker Engine 20.10+ (Linux zalecany)
+- Docker Compose v2 / `docker compose`
+- NVIDIA Container Toolkit, jeżeli chcesz uruchomić `ollama-gpu`
+- Opcjonalnie: `DOCKER_API_VERSION=1.44`, gdy klient Docker ma starsze API niż serwer
+
+## Szybki start
+
+1. Zbuduj wszystkie moduły:
+
+```bash
+docker compose build
+```
+
+2. Uruchom wybrane moduły, np.:
+
+```bash
+docker compose up -d nmap_suite recon hackagent autopentestx inspector ollama panel kali burp
+```
+
+3. Wejdź do kontenera:
+
+```bash
+docker exec -it nmap-suite bash
+```
+
+4. Uruchom narzędzie w środku, np.:
+
+```bash
+nmap -sC -sV 192.168.1.1
+```
+
+Jeżeli napotkasz błąd API klienta:
 
 ```bash
 DOCKER_API_VERSION=1.44 docker compose up -d nmap_suite
-DOCKER_API_VERSION=1.44 docker compose logs --tail=50 nmap_suite
 ```
 
-## Budowanie kontenera Recon Tools
+## Usługi i moduły
 
-Katalog: `recon`
+### `nmap_suite`
 
-Kontener zawiera:
-- `subfinder`
-- `amass`
+Narzędzia do skanowania sieci i hostów. Domyślnie uruchamiany w katalogu `/tools`.
 
-Uruchom:
+### `recon`
+
+Narzędzia do rozpoznania domeny i infrastruktury. W pakiecie znajdują się m.in. `subfinder` oraz `amass`.
+
+### `hackagent`
+
+Lokalny kontener HackAgent z kodem źródłowym do szybkiego developmentu i testowania CLI.
+
+### `autopentestx`
+
+Kontener AutoPentestX z zależnościami zdefiniowanymi w `autopentestx/requirements.txt`.
+
+### `inspector`
+
+Kontener do inspekcji i analizy, uruchamiający skrypty Python z katalogu `inspector/core`.
+
+### `ollama`
+
+Lokalny serwer Ollama z obsługą GPU. Przechowuje stan w katalogu `ollama-gpu`.
+
+### `panel`
+
+Backend AI dla panelu sterowania, który łączy się z lokalnym Ollama i oferuje endpointy do generowania raportów, PoC, analizy logów i kodu.
+
+### `kali`
+
+Kontener z narzędziami Kali do zadań zaawansowanych.
+
+### `burp`
+
+Opcjonalny kontener Burp Suite, przeznaczony do integracji z resztą środowiska.
+
+## Przykładowe komendy
+
+Uruchomienie kontenera `recon`:
 
 ```bash
-DOCKER_API_VERSION=1.44 docker compose build recon
-DOCKER_API_VERSION=1.44 docker compose up -d recon
+docker compose build recon
 ```
 
-Test wewnątrz kontenera:
+```bash
+docker compose up -d recon
+```
+
+Test w kontenerze `recon`:
 
 ```bash
 docker exec -it recon bash
@@ -40,29 +127,7 @@ subfinder -d example.com
 amass enum -d example.com
 ```
 
-Przykładowe komendy testowe:
-
-```bash
-subfinder -d example.com
-amass enum -d example.com
-```
-
-## Budowanie kontenera HackAgent
-
-Katalog: `hackagent`
-
-Kontener zawiera:
-- `hackagent` CLI
-- lokalny kod źródłowy projektu do szybkiego rozwoju
-
-Uruchom:
-
-```bash
-DOCKER_API_VERSION=1.44 docker compose build hackagent
-DOCKER_API_VERSION=1.44 docker compose up -d hackagent
-```
-
-Test wewnątrz kontenera:
+Sprawdzenie `hackagent`:
 
 ```bash
 docker exec -it hackagent bash
@@ -70,75 +135,24 @@ python3 -c "import hackagent; print('hackagent ok')"
 hackagent --help
 ```
 
-## Budowanie kontenera AutoPentestX
-
-Katalog: `autopentestx`
-
-Kontener zawiera:
-- AutoPentestX toolkit
-- zależności z `requirements.txt`
-
-Uruchom:
-
-```bash
-DOCKER_API_VERSION=1.44 docker compose build autopentestx
-DOCKER_API_VERSION=1.44 docker compose up -d autopentestx
-```
-
-Test wewnątrz kontenera:
+Sprawdzenie `autopentestx`:
 
 ```bash
 docker exec -it autopentestx bash
 python3 /app/main.py --version
 ```
 
-Jeśli chcesz uruchomić aplikację bezpośrednio:
-
-```bash
-docker exec -it autopentestx python3 /app/main.py -t example.com --no-safe-mode --skip-web
-```
-
-## Budowanie kontenera Inspector
-
-Katalog: `inspector`
-
-Kontener uruchamia narzędzie Inspector z katalogu `core`.
-
-Uruchom:
-
-```bash
-DOCKER_API_VERSION=1.44 docker compose build inspector
-DOCKER_API_VERSION=1.44 docker compose up -d inspector
-```
-
-Test wewnątrz kontenera:
+Sprawdzenie `inspector`:
 
 ```bash
 docker exec -it inspector bash
 python3 /app/core/inspector.py -h
 ```
 
-Przykład uruchomienia:
+## Rozwój projektu
 
-```bash
-docker exec -it inspector python3 /app/core/inspector.py +33666666666
-```
+Zobacz `ROADMAP.md` po szczegóły dotyczące kolejnych etapów rozwoju projektu.
 
-Test automatyczny:
+## Licencja
 
-```bash
-./inspector/test.sh
-```
-
-## Kolejność budowy narzędzi
-
-1. `nmap_suite` (infrastruktura)
-2. `recon` (powierzchnia ataku)
-3. `hackagent`
-4. `autopentestx`
-5. `inspector`
-6. `ollama`
-7. `kali`
-8. `burp` (opcjonalnie)
-
-Potem: panel sterowania, integracja narzędzi, AI i workflow pentestowy.
+Projekt jest dostępny na licencji MIT. Zobacz `LICENSE`.
