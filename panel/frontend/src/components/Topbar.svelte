@@ -1,16 +1,39 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { getStatus } from '$lib/services';
+
+  let running = $state(0);
+  let total = $state(0);
+  let ai = $state('sprawdzanie...');
+
+  async function refreshStatus() {
+    try {
+      const data = await getStatus();
+      const containers = Object.values(data.containers ?? {});
+      total = containers.length;
+      running = containers.filter((x) => x.running).length;
+      ai = data.ai_gateway?.error ? 'offline' : 'online';
+    } catch {
+      ai = 'offline';
+    }
+  }
+
+  onMount(refreshStatus);
+</script>
+
 <div class="topbar neon-border glass">
   <div class="status-item">
-    <span class="status-label">Postęp Projektu:</span>
-    <span class="status-value">75%</span>
-    <span class="status-badge cyan">Bieżący</span>
+    <span class="status-label">Tryb:</span>
+    <span class="status-value">Panel Pentest</span>
+    <span class="status-badge cyan">Aktywny</span>
   </div>
   <div class="status-item">
-    <span class="status-label">Terminy:</span>
-    <span class="status-value green">Zgodne</span>
+    <span class="status-label">Kontenery:</span>
+    <span class="status-value">{running}/{total}</span>
   </div>
   <div class="status-item">
-    <span class="status-label">Status Budżetu:</span>
-    <span class="status-value green">Zdrowy</span>
+    <span class="status-label">AI Gateway:</span>
+    <span class="status-value" class:green={ai === 'online'}>{ai}</span>
   </div>
 </div>
 
