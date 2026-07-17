@@ -12,6 +12,11 @@ export interface ContainerStatus {
   status: string;
   running: boolean;
   started_at?: string;
+  finished_at?: string;
+  state_status?: string;
+  error?: string;
+  restart_count?: number;
+  health_status?: string;
 }
 
 export interface StatusResponse {

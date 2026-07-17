@@ -35,11 +35,17 @@ def containers_status(names: list[str]) -> dict[str, dict]:
                 container = client.containers.get(name)
                 attrs = container.attrs
                 state = attrs.get("State", {})
+                health = state.get("Health") or {}
                 status_map[name] = {
                     "exists": True,
                     "status": container.status,
                     "running": bool(state.get("Running", False)),
                     "started_at": state.get("StartedAt"),
+                    "finished_at": state.get("FinishedAt"),
+                    "state_status": state.get("Status"),
+                    "error": state.get("Error"),
+                    "restart_count": attrs.get("RestartCount", 0),
+                    "health_status": health.get("Status"),
                 }
             except docker.errors.NotFound:
                 status_map[name] = {
