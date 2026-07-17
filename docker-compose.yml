@@ -95,7 +95,6 @@ services:
     image: ollama/ollama
     container_name: ollama-gpu
     restart: unless-stopped
-    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     ports:
