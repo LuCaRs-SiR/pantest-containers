@@ -1,7 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health_router, status_router, ai_router, tools_router
+from app.api import (
+    health_router,
+    status_router,
+    ai_router,
+    tools_router,
+    assistant_router,
+)
 
 app = FastAPI(title="Pantest Panel Backend")
 
@@ -17,3 +23,4 @@ app.include_router(health_router)
 app.include_router(status_router)
 app.include_router(ai_router)
 app.include_router(tools_router)
+app.include_router(assistant_router)

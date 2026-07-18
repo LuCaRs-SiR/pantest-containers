@@ -1,8 +1,13 @@
 <script>
   import AIChat from '../../components/AIChat.svelte';
+  import AssistantTaskRunner from '../../components/AssistantTaskRunner.svelte';
 </script>
 
 <h1 class="neon-text fade-in">AI Assistant</h1>
+
+<div class="fade-in">
+  <AssistantTaskRunner />
+</div>
 
 <div class="fade-in">
   <AIChat />

@@ -1,11 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getStatus } from '$lib/services';
-  import type { StatusResponse } from '$lib/types';
+  import { getStatus, getReports, getReport } from '$lib/services';
+  import type { StatusResponse, ReportListItem, AssistantReport } from '$lib/types';
 
   let status = $state<StatusResponse | null>(null);
+  let reports = $state<ReportListItem[]>([]);
+  let activeReport = $state<AssistantReport | null>(null);
   let loading = $state(true);
+  let loadingReports = $state(false);
+  let loadingReportDetails = $state(false);
   let error = $state('');
+  let reportsError = $state('');
 
   const issues = $derived.by(() => {
     if (!status) return [];
@@ -43,7 +48,35 @@
     }
   }
 
-  onMount(refresh);
+  async function refreshReports() {
+    loadingReports = true;
+    reportsError = '';
+    try {
+      const data = await getReports();
+      reports = data.reports;
+    } catch (err: any) {
+      reportsError = err.message ?? 'Nie udało się pobrać raportów.';
+    } finally {
+      loadingReports = false;
+    }
+  }
+
+  async function openReport(reportId: string) {
+    loadingReportDetails = true;
+    reportsError = '';
+    try {
+      activeReport = await getReport(reportId);
+    } catch (err: any) {
+      reportsError = err.message ?? 'Nie udało się pobrać szczegółów raportu.';
+    } finally {
+      loadingReportDetails = false;
+    }
+  }
+
+  onMount(async () => {
+    await refresh();
+    await refreshReports();
+  });
 </script>
 
 <h1 class="text-3xl font-black text-cockpit-accent mb-6">Status Kontenerów</h1>
@@ -95,6 +128,58 @@
     {/each}
   </div>
 {/if}
+
+<section class="summary glass neon-border report-box">
+  <div class="report-head">
+    <h2>Raporty Asystenta</h2>
+    <button class="neon-glow" onclick={refreshReports} disabled={loadingReports}>
+      {loadingReports ? 'Pobieranie...' : 'Odśwież raporty'}
+    </button>
+  </div>
+
+  {#if reportsError}
+    <p class="error">{reportsError}</p>
+  {/if}
+
+  {#if reports.length === 0}
+    <p>Brak raportów. Uruchom zadanie w zakładce AI Assistant.</p>
+  {:else}
+    <div class="reports-list">
+      {#each reports as report}
+        <button class="report-item" onclick={() => openReport(report.id)}>
+          <div><strong>{report.task}</strong></div>
+          <div>
+            status={report.status} | kroki={report.steps_total} | błędy={report.steps_failed}
+          </div>
+          <div class="stamp">{report.created_at}</div>
+        </button>
+      {/each}
+    </div>
+  {/if}
+
+  {#if loadingReportDetails}
+    <p>Wczytywanie raportu...</p>
+  {/if}
+
+  {#if activeReport}
+    <div class="active-report">
+      <h3>Szczegóły raportu: {activeReport.id}</h3>
+      <p><strong>Zadanie:</strong> {activeReport.task}</p>
+      <p><strong>Wniosek:</strong> {activeReport.summary.conclusion}</p>
+      <div class="steps-grid">
+        {#each activeReport.steps as step}
+          <div class="card glass neon-border">
+            <h4>{step.order}. {step.label}</h4>
+            <p><strong>Narzędzie:</strong> {step.tool}</p>
+            <p><strong>Status:</strong> {step.status}</p>
+            <p><strong>Exit code:</strong> {step.exit_code}</p>
+            <pre>{step.output}</pre>
+          </div>
+        {/each}
+      </div>
+    </div>
+  {/if}
+</section>
 
 <style>
   .summary {
@@ -150,5 +235,78 @@
   .error {
     color: #ff6b6b;
     margin-bottom: 12px;
+  }
+
+  .report-box {
+    margin-top: 20px;
+  }
+
+  .report-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .report-head h2 {
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+  }
+
+  .reports-list {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .report-item {
+    text-align: left;
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text-main);
+  }
+
+  .report-item:hover {
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.15);
+  }
+
+  .stamp {
+    margin-top: 3px;
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+
+  .active-report {
+    border-top: 1px solid rgba(0, 229, 255, 0.2);
+    padding-top: 12px;
+  }
+
+  .active-report h3 {
+    margin-bottom: 8px;
+  }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+  }
+
+  .steps-grid h4 {
+    margin: 0 0 8px;
+  }
+
+  .steps-grid pre {
+    max-height: 180px;
+    overflow: auto;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(0, 229, 255, 0.12);
+    border-radius: 6px;
+    padding: 8px;
+    white-space: pre-wrap;
+    font-size: 12px;
   }
 </style>

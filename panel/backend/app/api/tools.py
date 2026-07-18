@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.schemas import Target, Domain, Command
-from app.services import run_in_container
+from app.services import run_in_container, list_reports, get_report
 
 router = APIRouter(prefix="/api", tags=["tools"])
 
@@ -46,4 +46,9 @@ def kali(payload: Command):
 
 @router.get("/reports")
 def reports():
-    return {"reports": []}
+    return {"reports": list_reports()}
+
+
+@router.get("/reports/{report_id}")
+def report_details(report_id: str):
+    return get_report(report_id)

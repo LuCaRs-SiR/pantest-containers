@@ -1,5 +1,11 @@
 import { api } from '$lib/api';
-import type { ToolOutput, ReportsResponse, StatusResponse } from '$lib/types';
+import type {
+  ToolOutput,
+  ReportsResponse,
+  StatusResponse,
+  AssistantRunResponse,
+  AssistantReport
+} from '$lib/types';
 
 export function nmapScan(target: string) {
   return api<ToolOutput>('/api/nmap', 'POST', { target });
@@ -35,4 +41,16 @@ export function getStatus() {
 
 export function getReports() {
   return api<ReportsResponse>('/api/reports', 'GET');
+}
+
+export function getReport(reportId: string) {
+  return api<AssistantReport>(`/api/reports/${reportId}`, 'GET');
+}
+
+export function runAssistantTask(task: string, target?: string, domain?: string) {
+  return api<AssistantRunResponse>('/api/assistant/run', 'POST', {
+    task,
+    target: target || null,
+    domain: domain || null
+  });
 }
