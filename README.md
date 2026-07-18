@@ -4,6 +4,14 @@ Modularny, konteneryzowany zestaw narzędzi pentestowych do rozpoznania, automat
 
 Ten projekt jest zbudowany jako zbiór niezależnych kontenerów, które można uruchamiać osobno lub razem przez `docker compose`. Każdy moduł ma własny katalog, Dockerfile oraz lokalny kod źródłowy, aby zapewnić skalowalność i szybki rozwój.
 
+## Wizualizacja architektury
+
+Poniżej znajdują się aktualne grafiki prezentujące strukturę i przepływ w projekcie:
+
+![Architektura projektu](assets/architecture/architecture-overview.jpg)
+
+![Przepływ między modułami](assets/architecture/architecture-flow.jpg)
+
 ## Co znajduje się w repozytorium
 
 - `docker-compose.yml` — główny orchestrator wszystkich usług
