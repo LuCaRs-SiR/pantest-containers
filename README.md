@@ -18,6 +18,8 @@ Ten projekt jest zbudowany jako zbiór niezależnych kontenerów, które można 
 - `panel/frontend/` — SvelteKit frontend do obsługi panelu sterowania
 - `kali-tools/` — kontener z narzędziami Kali
 - `burp/` — opcjonalny kontener Burp Suite
+- `logs/` — centralny katalog logów i raportów asystenta
+- `LOGS.md` — opis konwencji logowania i ścieżek logów
 - `LICENSE` — licencja open-source MIT
 - `ROADMAP.md` — plan dalszego rozwoju projektu
 
@@ -152,6 +154,30 @@ python3 /app/core/inspector.py -h
 ## Rozwój projektu
 
 Zobacz `ROADMAP.md` po szczegóły dotyczące kolejnych etapów rozwoju projektu.
+
+## Aktualny stan katalogu głównego (2026-07-18)
+
+Aktualna struktura katalogu głównego obejmuje:
+
+- `ai-gateway/`
+- `autopentestx/`
+- `burp/`
+- `hackagent/`
+- `inspector/`
+- `kali-tools/`
+- `logs/`
+- `nmap-suite/`
+- `ollama-gpu/` (lokalny stan runtime, domyślnie poza kontrolą wersji)
+- `panel/` (`backend/` + `frontend/`)
+- `recon/`
+
+Pliki główne:
+
+- `docker-compose.yml`
+- `README.md`
+- `ROADMAP.md`
+- `LOGS.md`
+- `LICENSE`
 
 ## Licencja
 

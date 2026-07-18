@@ -21,6 +21,7 @@ tmp/
 docker-compose.override.yml
 *.env
 ollama-gpu/
+logs/assistant-reports/
 
 # macOS
 .DS_Store

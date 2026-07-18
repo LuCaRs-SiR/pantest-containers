@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import re
+import shlex
 from uuid import uuid4
 
 from app.services.docker import run_in_container
@@ -127,10 +128,80 @@ def _resolve_planner_context(
     }
 
 
+def _discover_tool_capabilities() -> dict[str, list[str]]:
+    checks = {
+        "kali-tools": [
+            "nmap",
+            "nikto",
+            "gobuster",
+            "sqlmap",
+            "hydra",
+            "curl",
+            "wget",
+        ],
+        "nmap-suite": ["nmap", "nping"],
+        "recon": ["subfinder", "amass"],
+        "inspector": ["python3"],
+        "autopentestx": ["python3"],
+        "hackagent": ["hackagent"],
+        "burp": ["bash"],
+    }
+
+    capabilities: dict[str, list[str]] = {}
+    for container, tools in checks.items():
+        available: list[str] = []
+        for tool in tools:
+            try:
+                result = run_in_container(
+                    container,
+                    ["sh", "-lc", f"command -v {tool} >/dev/null 2>&1"],
+                )
+                if result.get("exit_code") == 0:
+                    available.append(tool)
+            except Exception:
+                continue
+        capabilities[container] = available
+
+    return capabilities
+
+
+def _has_tool(
+    capabilities: dict[str, list[str]],
+    container: str,
+    tool: str,
+) -> bool:
+    return tool in capabilities.get(container, [])
+
+
+def _build_probe_url(target: str | None, domain: str | None) -> str | None:
+    value = domain or target
+    if not value:
+        return None
+    if value.startswith("http://") or value.startswith("https://"):
+        return value
+    return f"http://{value}"
+
+
+def _should_run_sqlmap(task: str) -> bool:
+    t = _normalize(task)
+    keywords = [
+        "sqlmap",
+        "sqli",
+        "sql injection",
+        "injection",
+        "api",
+        "endpoint",
+        "parametr",
+        "parameter",
+    ]
+    return any(keyword in t for keyword in keywords)
+
+
 def _build_plan(
     task: str,
     target: str | None,
     domain: str | None,
+    capabilities: dict[str, list[str]],
 ) -> list[dict]:
     steps: list[dict] = []
     context = _resolve_planner_context(task=task, target=target, domain=domain)
@@ -138,7 +209,7 @@ def _build_plan(
     domain = context["domain"]
     profiles = context["selected_profiles"]
 
-    if domain:
+    if domain and _has_tool(capabilities, "recon", "subfinder"):
         _append_step(
             steps,
             {
@@ -148,10 +219,28 @@ def _build_plan(
                 "command": ["subfinder", "-d", domain],
             },
         )
+    if domain and _has_tool(capabilities, "recon", "amass"):
+        _append_step(
+            steps,
+            {
+                "tool": "recon",
+                "label": "Rozszerzona enumeracja subdomen (amass)",
+                "container": "recon",
+                "command": [
+                    "bash",
+                    "-lc",
+                    (
+                        "amass enum -passive -d "
+                        f"{shlex.quote(domain)} "
+                        "-timeout 5 || true"
+                    ),
+                ],
+            },
+        )
 
     if "web" in profiles:
         web_target = target or domain
-        if web_target:
+        if web_target and _has_tool(capabilities, "nmap-suite", "nmap"):
             _append_step(
                 steps,
                 {
@@ -164,6 +253,55 @@ def _build_plan(
                         "-p",
                         "80,443,8080,8443",
                         web_target,
+                    ],
+                },
+            )
+        web_url = _build_probe_url(target=target, domain=domain)
+        if web_url and _has_tool(capabilities, "kali-tools", "nikto"):
+            _append_step(
+                steps,
+                {
+                    "tool": "kali",
+                    "label": "Audyt web servera (nikto)",
+                    "container": "kali-tools",
+                    "command": [
+                        "bash",
+                        "-lc",
+                        (
+                            "nikto -h "
+                            f"{shlex.quote(web_url)} "
+                            "-maxtime 2m || true"
+                        ),
+                    ],
+                },
+            )
+        if web_url and _has_tool(capabilities, "kali-tools", "gobuster"):
+            _append_step(
+                steps,
+                {
+                    "tool": "kali",
+                    "label": "Enumeracja katalogów web (gobuster)",
+                    "container": "kali-tools",
+                    "command": [
+                        "bash",
+                        "-lc",
+                        (
+                            "WL=''; TMP_WL=''; "
+                            "for p in "
+                            "/usr/share/wordlists/dirb/common.txt "
+                            "/usr/share/wordlists/dirbuster/"
+                            "directory-list-2.3-small.txt; "
+                            "do [ -f \"$p\" ] && WL=\"$p\" && break; done; "
+                            "if [ -z \"$WL\" ]; then "
+                            "TMP_WL=$(mktemp); "
+                            "printf 'admin\\nlogin\\napi\\nuploads\\n' > "
+                            "\"$TMP_WL\"; "
+                            "WL=\"$TMP_WL\"; fi; "
+                            "gobuster dir -u "
+                            f"{shlex.quote(web_url)} "
+                            "-w \"$WL\" -k -q -t 20 || true; "
+                            "if [ -n \"$TMP_WL\" ]; then rm -f \"$TMP_WL\"; fi"
+                        ),
                     ],
                 },
             )
@@ -189,16 +327,21 @@ def _build_plan(
             and not probe_url.startswith("https://")
         ):
             probe_url = f"http://{probe_url}"
-        _append_step(
-            steps,
-            {
-                "tool": "kali",
-                "label": "Szybka walidacja endpointu API",
-                "container": "kali-tools",
-                "command": ["bash", "-lc", f"curl -skI {probe_url} || true"],
-            },
-        )
-        if target:
+        if _has_tool(capabilities, "kali-tools", "curl"):
+            _append_step(
+                steps,
+                {
+                    "tool": "kali",
+                    "label": "Szybka walidacja endpointu API",
+                    "container": "kali-tools",
+                    "command": [
+                        "bash",
+                        "-lc",
+                        f"curl -skI {shlex.quote(probe_url)} || true",
+                    ],
+                },
+            )
+        if target and _has_tool(capabilities, "nmap-suite", "nmap"):
             _append_step(
                 steps,
                 {
@@ -214,10 +357,33 @@ def _build_plan(
                     ],
                 },
             )
+        if (
+            _should_run_sqlmap(task)
+            and _has_tool(capabilities, "kali-tools", "sqlmap")
+        ):
+            _append_step(
+                steps,
+                {
+                    "tool": "kali",
+                    "label": "Kontrolowana walidacja SQLi (sqlmap)",
+                    "container": "kali-tools",
+                    "command": [
+                        "bash",
+                        "-lc",
+                        (
+                            "sqlmap -u "
+                            f"{shlex.quote(probe_url)} "
+                            "--batch --risk=1 --level=1 --timeout=8 "
+                            "--retries=0 --threads=1 --smart "
+                            "--flush-session --technique=BEUSTQ || true"
+                        ),
+                    ],
+                },
+            )
 
     if "infra" in profiles:
         infra_target = target or domain
-        if infra_target:
+        if infra_target and _has_tool(capabilities, "nmap-suite", "nmap"):
             _append_step(
                 steps,
                 {
@@ -225,6 +391,24 @@ def _build_plan(
                     "label": "Skan usług i portów infrastruktury",
                     "container": "nmap-suite",
                     "command": ["nmap", "-sV", infra_target],
+                },
+            )
+        if infra_target and _has_tool(capabilities, "nmap-suite", "nping"):
+            _append_step(
+                steps,
+                {
+                    "tool": "nmap",
+                    "label": "Walidacja odpowiedzi TCP (nping)",
+                    "container": "nmap-suite",
+                    "command": [
+                        "nping",
+                        "--tcp-connect",
+                        "-p",
+                        "80,443",
+                        "--count",
+                        "5",
+                        infra_target,
+                    ],
                 },
             )
         _append_step(
@@ -239,7 +423,7 @@ def _build_plan(
 
     if "ad" in profiles:
         ad_target = target or domain
-        if ad_target:
+        if ad_target and _has_tool(capabilities, "nmap-suite", "nmap"):
             _append_step(
                 steps,
                 {
@@ -255,19 +439,24 @@ def _build_plan(
                     ],
                 },
             )
-            _append_step(
-                steps,
-                {
-                    "tool": "kali",
-                    "label": "Szybki rekonesans LDAP/SMB",
-                    "container": "kali-tools",
-                    "command": [
-                        "bash",
-                        "-lc",
-                        f"nmap -p 389,445 {ad_target} || true",
-                    ],
-                },
-            )
+            if _has_tool(capabilities, "kali-tools", "nmap"):
+                _append_step(
+                    steps,
+                    {
+                        "tool": "kali",
+                        "label": "Szybki rekonesans LDAP/SMB",
+                        "container": "kali-tools",
+                        "command": [
+                            "bash",
+                            "-lc",
+                            (
+                                "nmap -p 389,445 "
+                                f"{shlex.quote(ad_target)} "
+                                "|| true"
+                            ),
+                        ],
+                    },
+                )
 
     if "automation" in profiles:
         _append_step(
@@ -279,15 +468,16 @@ def _build_plan(
                 "command": ["python3", "/app/main.py", "--version"],
             },
         )
-        _append_step(
-            steps,
-            {
-                "tool": "hackagent",
-                "label": "Generowanie checklisty działań",
-                "container": "hackagent",
-                "command": ["hackagent", "--help"],
-            },
-        )
+        if _has_tool(capabilities, "hackagent", "hackagent"):
+            _append_step(
+                steps,
+                {
+                    "tool": "hackagent",
+                    "label": "Generowanie checklisty działań",
+                    "container": "hackagent",
+                    "command": ["hackagent", "--help"],
+                },
+            )
 
     if not steps:
         _append_step(
@@ -512,6 +702,7 @@ def _build_professional_report(
     resolved_domain: str | None,
     steps_out: list[dict],
     summary: dict,
+    tool_capabilities: dict[str, list[str]],
 ) -> dict:
     tools_used = list(
         dict.fromkeys([x.get("tool", "unknown") for x in steps_out])
@@ -657,6 +848,7 @@ def _build_professional_report(
             ),
         ],
         "appendix": {
+            "tool_capabilities": tool_capabilities,
             "step_trace": step_trace,
         },
     }
@@ -729,11 +921,13 @@ def execute_assistant_task(
     resolved_target = context["target"]
     resolved_domain = context["domain"]
     selected_profiles = context["selected_profiles"]
+    tool_capabilities = _discover_tool_capabilities()
 
     plan = _build_plan(
         task=task,
         target=resolved_target,
         domain=resolved_domain,
+        capabilities=tool_capabilities,
     )
     steps_out: list[dict] = []
 
@@ -766,6 +960,7 @@ def execute_assistant_task(
             "domain": resolved_domain,
         },
         "selected_profiles": selected_profiles,
+        "tool_capabilities": tool_capabilities,
         "status": summary["status"],
         "summary": summary,
         "plan": [
@@ -787,6 +982,7 @@ def execute_assistant_task(
             resolved_domain=resolved_domain,
             steps_out=steps_out,
             summary=summary,
+            tool_capabilities=tool_capabilities,
         ),
     }
 
