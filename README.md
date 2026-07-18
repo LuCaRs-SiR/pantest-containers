@@ -1,7 +1,7 @@
 # Pentest Containers
 
 <p align="center">
-	<img src="assets/hero/repo-hero.jpg" alt="Pentest Containers Hero" width="100%" />
+	<img src="tools-meta/assets/hero/repo-hero.jpg" alt="Pentest Containers Hero" width="100%" />
 </p>
 
 Modularny, konteneryzowany zestaw narzędzi pentestowych do rozpoznania, automatyzacji i inspekcji.
@@ -20,14 +20,14 @@ Sekcja prezentuje widok high-level oraz przepływ operacyjny między modułami. 
 
 ### Architecture Overview
 
-<img src="assets/architecture/architecture-overview.jpg" alt="Architektura projektu" width="100%" />
+<img src="tools-meta/assets/architecture/architecture-overview.jpg" alt="Architektura projektu" width="100%" />
 
 Opis:
 Widok topologii systemu pokazuje relacje miedzy kontenerami narzedziowymi, warstwa AI oraz panelem zarzadzania. Diagram sluzy jako mapa komponentow i punkt wejscia dla onboarding'u technicznego.
 
 ### Operational Flow
 
-<img src="assets/architecture/architecture-flow.jpg" alt="Przeplyw miedzy modulami" width="100%" />
+<img src="tools-meta/assets/architecture/architecture-flow.jpg" alt="Przeplyw miedzy modulami" width="100%" />
 
 Opis:
 Widok przeplywu operacyjnego prezentuje kolejnosc dzialan i wymiane danych miedzy modulami. Ulatwia zrozumienie przebiegu procesu od uruchomienia narzedzi, przez analize, do generowania wynikow i raportow.
@@ -55,9 +55,9 @@ Widok przeplywu operacyjnego prezentuje kolejnosc dzialan i wymiane danych miedz
 - `kali-tools/` — kontener z narzędziami Kali
 - `burp/` — opcjonalny kontener Burp Suite
 - `logs/` — centralny katalog logów i raportów asystenta
-- `docs/` — uporządkowana dokumentacja projektu i operacji
+- `tools-meta/docs/` — uporządkowana dokumentacja projektu i operacji
 - `LICENSE` — licencja open-source MIT
-- `docs/project/ROADMAP.md` — plan dalszego rozwoju projektu
+- `tools-meta/docs/project/ROADMAP.md` — plan dalszego rozwoju projektu
 
 ## Cel projektu
 
@@ -189,7 +189,7 @@ python3 /app/core/inspector.py -h
 
 ## Rozwój projektu
 
-Zobacz `docs/project/ROADMAP.md` po szczegóły dotyczące kolejnych etapów rozwoju projektu.
+Zobacz `tools-meta/docs/project/ROADMAP.md` po szczegóły dotyczące kolejnych etapów rozwoju projektu.
 
 ## Aktualny stan katalogu głównego (2026-07-18)
 
@@ -211,9 +211,9 @@ Pliki główne:
 
 - `docker-compose.yml`
 - `README.md`
-- `docs/README.md`
-- `docs/project/ROADMAP.md`
-- `docs/operations/LOGS.md`
+- `tools-meta/docs/README.md`
+- `tools-meta/docs/project/ROADMAP.md`
+- `tools-meta/docs/operations/LOGS.md`
 - `LICENSE`
 
 ## Licencja
