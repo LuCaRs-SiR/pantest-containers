@@ -29,7 +29,7 @@ def _call_ollama_generate(payload: dict, timeout: int = 120, retries: int = 2) -
                 timeout=timeout,
             )
 
-            if response.status_code >= 500:
+            if response.status_code >= 400:
                 body = response.text[:400]
                 raise requests.HTTPError(
                     f"upstream {response.status_code}: {body}", response=response
@@ -94,6 +94,26 @@ def generate(payload: Prompt):
 
     try:
         return _call_ollama_generate(outgoing, timeout=180, retries=2)
+    except requests.HTTPError as exc:
+        status_code = exc.response.status_code if exc.response is not None else None
+        body = (exc.response.text if exc.response is not None else "")[:400]
+
+        # Handle stale UI/client caches that request non-existing models.
+        if (
+            status_code == 404
+            and "not found" in body.lower()
+            and outgoing.get("model") != DEFAULT_MODEL
+        ):
+            logger.warning(
+                "Model '%s' not found upstream, retrying with default '%s'",
+                outgoing.get("model"),
+                DEFAULT_MODEL,
+            )
+            outgoing["model"] = DEFAULT_MODEL
+            return _call_ollama_generate(outgoing, timeout=180, retries=2)
+
+        logger.error("/api/generate failed: %s", exc)
+        raise HTTPException(status_code=502, detail=str(exc))
     except requests.RequestException as exc:
         logger.error("/api/generate failed: %s", exc)
         raise HTTPException(status_code=502, detail=str(exc))
