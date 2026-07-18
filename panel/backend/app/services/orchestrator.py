@@ -101,28 +101,42 @@ def _append_step(steps: list[dict], step: dict) -> None:
     steps.append(step)
 
 
+def _resolve_planner_context(
+    task: str,
+    target: str | None,
+    domain: str | None,
+) -> dict:
+    resolved_domain = domain or _extract_domain(task)
+    resolved_target = target or _extract_target(task)
+
+    profiles = _detect_profiles(task)
+    if not profiles:
+        if resolved_domain and resolved_target:
+            profiles = ["web", "infra"]
+        elif resolved_domain:
+            profiles = ["web"]
+        elif resolved_target:
+            profiles = ["infra"]
+        else:
+            profiles = ["automation"]
+
+    return {
+        "target": resolved_target,
+        "domain": resolved_domain,
+        "selected_profiles": profiles,
+    }
+
+
 def _build_plan(
     task: str,
     target: str | None,
     domain: str | None,
 ) -> list[dict]:
     steps: list[dict] = []
-
-    if not domain:
-        domain = _extract_domain(task)
-    if not target:
-        target = _extract_target(task)
-
-    profiles = _detect_profiles(task)
-    if not profiles:
-        if domain and target:
-            profiles = ["web", "infra"]
-        elif domain:
-            profiles = ["web"]
-        elif target:
-            profiles = ["infra"]
-        else:
-            profiles = ["automation"]
+    context = _resolve_planner_context(task=task, target=target, domain=domain)
+    target = context["target"]
+    domain = context["domain"]
+    profiles = context["selected_profiles"]
 
     if domain:
         _append_step(
@@ -322,7 +336,16 @@ def execute_assistant_task(
     target: str | None,
     domain: str | None,
 ) -> dict:
-    plan = _build_plan(task=task, target=target, domain=domain)
+    context = _resolve_planner_context(task=task, target=target, domain=domain)
+    resolved_target = context["target"]
+    resolved_domain = context["domain"]
+    selected_profiles = context["selected_profiles"]
+
+    plan = _build_plan(
+        task=task,
+        target=resolved_target,
+        domain=resolved_domain,
+    )
     steps_out: list[dict] = []
 
     for index, step in enumerate(plan, start=1):
@@ -349,6 +372,11 @@ def execute_assistant_task(
         "created_at": created_at,
         "task": task,
         "input": {"target": target, "domain": domain},
+        "input_resolved": {
+            "target": resolved_target,
+            "domain": resolved_domain,
+        },
+        "selected_profiles": selected_profiles,
         "status": summary["status"],
         "summary": summary,
         "plan": [

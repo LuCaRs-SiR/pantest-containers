@@ -165,6 +165,15 @@
     <div class="active-report">
       <h3>Szczegóły raportu: {activeReport.id}</h3>
       <p><strong>Zadanie:</strong> {activeReport.task}</p>
+      <p>
+        <strong>Profile:</strong>
+        {(activeReport.selected_profiles ?? []).join(', ') || 'brak'}
+      </p>
+      <p>
+        <strong>Resolved input:</strong>
+        target={activeReport.input_resolved?.target ?? '-'},
+        domain={activeReport.input_resolved?.domain ?? '-'}
+      </p>
       <p><strong>Wniosek:</strong> {activeReport.summary.conclusion}</p>
       <div class="steps-grid">
         {#each activeReport.steps as step}

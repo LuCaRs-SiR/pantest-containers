@@ -55,8 +55,17 @@
     <div class="result">
       <h3>Wynik wykonania</h3>
       <p><strong>Status:</strong> {result.report.summary.status}</p>
+      <p>
+        <strong>Profile:</strong>
+        {(result.report.selected_profiles ?? []).join(', ') || 'brak'}
+      </p>
       <p><strong>Kroki:</strong> {result.report.summary.total_steps}</p>
       <p><strong>Błędy:</strong> {result.report.summary.failed_steps}</p>
+      <p>
+        <strong>Dane wejściowe (resolved):</strong>
+        target={result.report.input_resolved?.target ?? '-'},
+        domain={result.report.input_resolved?.domain ?? '-'}
+      </p>
       <p><strong>Wniosek:</strong> {result.report.summary.conclusion}</p>
       <p>
         <strong>Raport:</strong>

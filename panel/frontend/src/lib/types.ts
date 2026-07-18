@@ -53,7 +53,12 @@ export interface AssistantReport {
   id: string;
   created_at: string;
   task: string;
+  selected_profiles?: string[];
   input: {
+    target?: string | null;
+    domain?: string | null;
+  };
+  input_resolved?: {
     target?: string | null;
     domain?: string | null;
   };
