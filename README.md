@@ -55,9 +55,9 @@ Widok przeplywu operacyjnego prezentuje kolejnosc dzialan i wymiane danych miedz
 - `kali-tools/` — kontener z narzędziami Kali
 - `burp/` — opcjonalny kontener Burp Suite
 - `logs/` — centralny katalog logów i raportów asystenta
-- `LOGS.md` — opis konwencji logowania i ścieżek logów
+- `docs/` — uporządkowana dokumentacja projektu i operacji
 - `LICENSE` — licencja open-source MIT
-- `ROADMAP.md` — plan dalszego rozwoju projektu
+- `docs/project/ROADMAP.md` — plan dalszego rozwoju projektu
 
 ## Cel projektu
 
@@ -189,7 +189,7 @@ python3 /app/core/inspector.py -h
 
 ## Rozwój projektu
 
-Zobacz `ROADMAP.md` po szczegóły dotyczące kolejnych etapów rozwoju projektu.
+Zobacz `docs/project/ROADMAP.md` po szczegóły dotyczące kolejnych etapów rozwoju projektu.
 
 ## Aktualny stan katalogu głównego (2026-07-18)
 
@@ -211,8 +211,9 @@ Pliki główne:
 
 - `docker-compose.yml`
 - `README.md`
-- `ROADMAP.md`
-- `LOGS.md`
+- `docs/README.md`
+- `docs/project/ROADMAP.md`
+- `docs/operations/LOGS.md`
 - `LICENSE`
 
 ## Licencja
