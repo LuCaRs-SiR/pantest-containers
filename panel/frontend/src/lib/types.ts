@@ -49,6 +49,65 @@ export interface AssistantStep {
   output?: string;
 }
 
+export interface ProfessionalFinding {
+  id: string;
+  title: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'informational';
+  category: string;
+  affected_asset: string;
+  evidence: string;
+  impact: string;
+  recommendation: string;
+}
+
+export interface ProfessionalReport {
+  meta: {
+    report_type: string;
+    version: string;
+    prepared_at: string;
+    language: string;
+    classification: string;
+  };
+  engagement: {
+    objective: string;
+    scope: {
+      target?: string | null;
+      domain?: string | null;
+      profiles?: string[];
+    };
+    authorization_notice: string;
+  };
+  executive_summary: {
+    overall_risk: 'critical' | 'high' | 'medium' | 'low';
+    assessment_status: 'ok' | 'partial' | 'failed' | 'unknown';
+    key_observations: string[];
+    conclusion: string;
+  };
+  methodology: {
+    standard_reference: string[];
+    phases: string[];
+    tools_used: string[];
+  };
+  findings: ProfessionalFinding[];
+  recommendations: {
+    immediate: string[];
+    short_term: string[];
+    long_term: string[];
+  };
+  limitations: string[];
+  appendix: {
+    step_trace: Array<{
+      order?: number;
+      label?: string;
+      tool?: string;
+      status?: string;
+      exit_code?: number;
+      evidence_excerpt?: string;
+    }>;
+  };
+  markdown?: string;
+}
+
 export interface AssistantReport {
   id: string;
   created_at: string;
@@ -71,6 +130,7 @@ export interface AssistantReport {
   };
   plan: AssistantStep[];
   steps: AssistantStep[];
+  professional_report?: ProfessionalReport;
 }
 
 export interface AssistantRunResponse {

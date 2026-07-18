@@ -201,6 +201,86 @@
         domain={activeReport.input_resolved?.domain ?? '-'}
       </p>
       <p><strong>Wniosek:</strong> {activeReport.summary.conclusion}</p>
+
+      {#if activeReport.professional_report}
+        <div class="professional-report glass neon-border">
+          <h4>Raport Profesjonalny</h4>
+          <p>
+            <strong>Typ:</strong> {activeReport.professional_report.meta.report_type}
+            | <strong>Wersja:</strong> {activeReport.professional_report.meta.version}
+            | <strong>Klasyfikacja:</strong> {activeReport.professional_report.meta.classification}
+          </p>
+          <p>
+            <strong>Ryzyko ogólne:</strong>
+            {activeReport.professional_report.executive_summary.overall_risk}
+          </p>
+          <p><strong>Cel audytu:</strong> {activeReport.professional_report.engagement.objective}</p>
+          <p>
+            <strong>Zakres:</strong>
+            target={activeReport.professional_report.engagement.scope.target ?? '-'},
+            domain={activeReport.professional_report.engagement.scope.domain ?? '-'}
+          </p>
+
+          <div class="pro-grid">
+            <div>
+              <h5>Metodologia</h5>
+              <ul>
+                {#each activeReport.professional_report.methodology.standard_reference as item}
+                  <li>{item}</li>
+                {/each}
+              </ul>
+            </div>
+            <div>
+              <h5>Kluczowe obserwacje</h5>
+              <ul>
+                {#each activeReport.professional_report.executive_summary.key_observations as item}
+                  <li>{item}</li>
+                {/each}
+              </ul>
+            </div>
+          </div>
+
+          <h5>Ustalenia</h5>
+          <div class="findings-grid">
+            {#each activeReport.professional_report.findings as finding}
+              <div class="card glass neon-border finding-card">
+                <h6>{finding.id} · {finding.title}</h6>
+                <p><strong>Severity:</strong> {finding.severity}</p>
+                <p><strong>Kategoria:</strong> {finding.category}</p>
+                <p><strong>Asset:</strong> {finding.affected_asset}</p>
+                <p><strong>Evidence:</strong> {finding.evidence}</p>
+                <p><strong>Impact:</strong> {finding.impact}</p>
+                <p><strong>Rekomendacja:</strong> {finding.recommendation}</p>
+              </div>
+            {/each}
+          </div>
+
+          <div class="pro-grid">
+            <div>
+              <h5>Rekomendacje natychmiastowe</h5>
+              <ul>
+                {#each activeReport.professional_report.recommendations.immediate as item}
+                  <li>{item}</li>
+                {/each}
+              </ul>
+            </div>
+            <div>
+              <h5>Ograniczenia raportu</h5>
+              <ul>
+                {#each activeReport.professional_report.limitations as item}
+                  <li>{item}</li>
+                {/each}
+              </ul>
+            </div>
+          </div>
+
+          {#if activeReport.professional_report.markdown}
+            <h5>Wersja dokumentowa (Markdown)</h5>
+            <pre class="markdown-preview">{activeReport.professional_report.markdown}</pre>
+          {/if}
+        </div>
+      {/if}
+
       <div class="steps-grid">
         {#each activeReport.steps as step}
           <div class="card glass neon-border">
@@ -353,6 +433,54 @@
   .active-report {
     border-top: 1px solid rgba(0, 229, 255, 0.2);
     padding-top: 12px;
+  }
+
+  .professional-report {
+    margin: 14px 0;
+    padding: 12px;
+  }
+
+  .professional-report h4,
+  .professional-report h5,
+  .professional-report h6 {
+    margin: 0 0 8px;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .professional-report h5 {
+    margin-top: 10px;
+  }
+
+  .pro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+  }
+
+  .professional-report ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .findings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+  }
+
+  .finding-card h6 {
+    margin-bottom: 6px;
+  }
+
+  .markdown-preview {
+    max-height: 260px;
+    overflow: auto;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(0, 229, 255, 0.12);
+    border-radius: 6px;
+    padding: 10px;
+    white-space: pre-wrap;
+    font-size: 12px;
   }
 
   .active-report h3 {

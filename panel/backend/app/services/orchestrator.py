@@ -331,6 +331,395 @@ def _summary(steps: list[dict]) -> dict:
     }
 
 
+def _extract_open_ports(output: str) -> list[dict]:
+    ports: list[dict] = []
+    for line in output.splitlines():
+        line = line.strip()
+        match = re.match(r"^(\d+)/(tcp|udp)\s+open\s+([\w\-\?]+)", line)
+        if not match:
+            continue
+        ports.append(
+            {
+                "port": int(match.group(1)),
+                "proto": match.group(2),
+                "service": match.group(3),
+            }
+        )
+    return ports
+
+
+def _risk_weight(severity: str) -> int:
+    mapping = {
+        "critical": 4,
+        "high": 3,
+        "medium": 2,
+        "low": 1,
+        "informational": 0,
+    }
+    return mapping.get(severity, 0)
+
+
+def _risk_label(findings: list[dict], summary: dict) -> str:
+    if summary.get("status") == "failed":
+        return "high"
+
+    if not findings:
+        return "low"
+
+    max_weight = max(
+        _risk_weight(x.get("severity", "informational"))
+        for x in findings
+    )
+    if max_weight >= 4:
+        return "critical"
+    if max_weight == 3:
+        return "high"
+    if max_weight == 2:
+        return "medium"
+    return "low"
+
+
+def _to_excerpt(text: str, limit: int = 360) -> str:
+    compact = " ".join(text.split())
+    if len(compact) <= limit:
+        return compact
+    return f"{compact[:limit]}..."
+
+
+def _build_findings(
+    steps_out: list[dict],
+    resolved_target: str | None,
+    resolved_domain: str | None,
+) -> list[dict]:
+    findings: list[dict] = []
+    affected = resolved_target or resolved_domain or "zakres nieokreślony"
+
+    for step in steps_out:
+        step_output = step.get("output", "")
+
+        if step.get("status") != "ok":
+            findings.append(
+                {
+                    "title": f"Niepowodzenie kroku: {step.get('label')}",
+                    "severity": "high",
+                    "category": "process",
+                    "affected_asset": affected,
+                    "evidence": _to_excerpt(step_output),
+                    "impact": (
+                        "Niepełna realizacja testu może powodować "
+                        "luki w pokryciu "
+                        "zakresu i obniża wiarygodność wyniku analizy."
+                    ),
+                    "recommendation": (
+                        "Powtórzyć krok po usunięciu przyczyny błędu, "
+                        "potwierdzić "
+                        "dostępność narzędzia i ponowić walidację dowodów."
+                    ),
+                }
+            )
+
+        if step.get("tool") == "nmap":
+            open_ports = _extract_open_ports(step_output)
+            if open_ports:
+                services = ", ".join(
+                    f"{x['port']}/{x['proto']} ({x['service']})"
+                    for x in open_ports[:8]
+                )
+                findings.append(
+                    {
+                        "title": (
+                            "Wykryto otwarte usługi sieciowe "
+                            f"({len(open_ports)})"
+                        ),
+                        "severity": (
+                            "medium" if len(open_ports) >= 3 else "low"
+                        ),
+                        "category": "exposure",
+                        "affected_asset": affected,
+                        "evidence": services,
+                        "impact": (
+                            "Dostępne z sieci usługi zwiększają "
+                            "powierzchnię ataku i wymagają walidacji "
+                            "konfiguracji oraz zasad dostępu."
+                        ),
+                        "recommendation": (
+                            "Ograniczyć ekspozycję do niezbędnych portów, "
+                            "wymusić ACL/firewall i potwierdzić "
+                            "hardening usług wystawionych."
+                        ),
+                    }
+                )
+
+        if (
+            step.get("tool") == "burp"
+            and "manual proxy validation" in step_output
+        ):
+            findings.append(
+                {
+                    "title": "Wymagana manualna walidacja warstwy HTTP",
+                    "severity": "informational",
+                    "category": "coverage",
+                    "affected_asset": affected,
+                    "evidence": _to_excerpt(step_output),
+                    "impact": (
+                        "Brak pełnej analizy manualnej może pozostawić "
+                        "niewykryte błędy "
+                        "logiki biznesowej i autoryzacji."
+                    ),
+                    "recommendation": (
+                        "Uzupełnić test o manualny przegląd "
+                        "request/response, testy "
+                        "autoryzacji oraz walidację mechanizmów sesji."
+                    ),
+                }
+            )
+
+    if not findings:
+        findings.append(
+            {
+                "title": "Brak krytycznych niezgodności w wykonanym zakresie",
+                "severity": "informational",
+                "category": "result",
+                "affected_asset": affected,
+                "evidence": (
+                    "Wszystkie kroki zakończone poprawnie "
+                    "w aktualnym zakresie."
+                ),
+                "impact": (
+                    "Wynik pozytywny dotyczy wyłącznie testowanego "
+                    "zakresu i czasu badania; nie stanowi gwarancji "
+                    "braku podatności poza zakresem."
+                ),
+                "recommendation": (
+                    "Utrzymać ciągłą walidację bezpieczeństwa "
+                    "i cykliczne retesty po "
+                    "zmianach środowiska lub aplikacji."
+                ),
+            }
+        )
+
+    for idx, finding in enumerate(findings, start=1):
+        finding["id"] = f"F-{idx:03d}"
+
+    return findings
+
+
+def _build_professional_report(
+    task: str,
+    created_at: str,
+    selected_profiles: list[str],
+    resolved_target: str | None,
+    resolved_domain: str | None,
+    steps_out: list[dict],
+    summary: dict,
+) -> dict:
+    tools_used = list(
+        dict.fromkeys([x.get("tool", "unknown") for x in steps_out])
+    )
+    findings = _build_findings(
+        steps_out=steps_out,
+        resolved_target=resolved_target,
+        resolved_domain=resolved_domain,
+    )
+    overall_risk = _risk_label(findings=findings, summary=summary)
+
+    immediate_actions = [
+        (
+            "Potwierdzić i ograniczyć ekspozycję usług sieciowych "
+            "wykrytych podczas skanów."
+        ),
+        (
+            "Wdrożyć lub zaktualizować reguły zapory "
+            "(host/network ACL) zgodnie z zasadą najmniejszych uprawnień."
+        ),
+        (
+            "Przeprowadzić retest po wdrożeniu poprawek "
+            "i udokumentować wynik walidacji."
+        ),
+    ]
+
+    short_term_actions = [
+        (
+            "Uzupełnić testy o scenariusze manualne "
+            "(logika biznesowa, autoryzacja, zarządzanie sesją)."
+        ),
+        "Skorelować wyniki z inwentarzem usług i właścicielami systemów.",
+        (
+            "Ustalić harmonogram cyklicznego testu bezpieczeństwa "
+            "dla tego samego zakresu."
+        ),
+    ]
+
+    long_term_actions = [
+        (
+            "Włączyć testy bezpieczeństwa do procesu SDLC/CI "
+            "oraz przeglądów zmian infrastrukturalnych."
+        ),
+        (
+            "Zastosować politykę hardeningu bazującą na benchmarkach "
+            "CIS/organizacyjnych standardach."
+        ),
+        (
+            "Utrzymywać ciągły monitoring i proces zarządzania "
+            "podatnościami z mierzalnym SLA."
+        ),
+    ]
+
+    step_trace = [
+        {
+            "order": x.get("order"),
+            "label": x.get("label"),
+            "tool": x.get("tool"),
+            "status": x.get("status"),
+            "exit_code": x.get("exit_code"),
+            "evidence_excerpt": _to_excerpt(x.get("output", "")),
+        }
+        for x in steps_out
+    ]
+
+    report = {
+        "meta": {
+            "report_type": "pentest-execution-report",
+            "version": "1.0",
+            "prepared_at": created_at,
+            "language": "pl-PL",
+            "classification": "Confidential",
+        },
+        "engagement": {
+            "objective": task,
+            "scope": {
+                "target": resolved_target,
+                "domain": resolved_domain,
+                "profiles": selected_profiles,
+            },
+            "authorization_notice": (
+                "Raport przeznaczony do testów bezpieczeństwa "
+                "wykonywanych wyłącznie "
+                "na podstawie ważnego zlecenia i zgody właściciela środowiska."
+            ),
+        },
+        "executive_summary": {
+            "overall_risk": overall_risk,
+            "assessment_status": summary.get("status"),
+            "key_observations": [
+                (
+                    "Zrealizowano "
+                    f"{summary.get('total_steps', 0)} kroków testowych, "
+                    "błędnych: "
+                    f"{summary.get('failed_steps', 0)}."
+                ),
+                (
+                    "Zakres wykonania obejmował profile: "
+                    f"{', '.join(selected_profiles)}."
+                    if selected_profiles
+                    else "brak."
+                ),
+                (
+                    "Wyniki wymagają potwierdzenia przez retest "
+                    "po wdrożeniu działań naprawczych."
+                ),
+            ],
+            "conclusion": summary.get("conclusion"),
+        },
+        "methodology": {
+            "standard_reference": [
+                "PTES",
+                "OWASP Testing Guide",
+                "NIST SP 800-115",
+            ],
+            "phases": [
+                "Definicja zakresu i celu testu",
+                "Rozpoznanie i enumeracja usług",
+                "Weryfikacja ekspozycji i testy techniczne",
+                "Analiza wyników i ocena ryzyka",
+                "Raportowanie oraz zalecenia naprawcze",
+            ],
+            "tools_used": tools_used,
+        },
+        "findings": findings,
+        "recommendations": {
+            "immediate": immediate_actions,
+            "short_term": short_term_actions,
+            "long_term": long_term_actions,
+        },
+        "limitations": [
+            (
+                "Analiza dotyczy wyłącznie przekazanego zakresu "
+                "i czasu wykonania testu."
+            ),
+            (
+                "Część testów aplikacyjnych może wymagać "
+                "dodatkowej walidacji manualnej."
+            ),
+            (
+                "Brak zmian konfiguracyjnych po stronie testera; "
+                "raport ma charakter doradczy."
+            ),
+        ],
+        "appendix": {
+            "step_trace": step_trace,
+        },
+    }
+
+    markdown_lines = [
+        "# Raport z Testu Bezpieczeństwa",
+        "",
+        "## 1. Informacje formalne",
+        f"- Data przygotowania: {created_at}",
+        "- Klasyfikacja: Confidential",
+        f"- Cel zlecenia: {task}",
+        (
+            f"- Zakres: target={resolved_target or '-'}, "
+            f"domain={resolved_domain or '-'}"
+        ),
+        (
+            "- Profile testu: "
+            f"{', '.join(selected_profiles) if selected_profiles else 'brak'}"
+        ),
+        "",
+        "## 2. Executive Summary",
+        f"- Poziom ryzyka ogólnego: {overall_risk}",
+        f"- Status realizacji: {summary.get('status')}",
+        f"- Wniosek: {summary.get('conclusion')}",
+        "",
+        "## 3. Ustalenia",
+    ]
+
+    for finding in findings:
+        markdown_lines.extend(
+            [
+                f"### {finding['id']} - {finding['title']}",
+                f"- Severity: {finding['severity']}",
+                f"- Kategoria: {finding['category']}",
+                f"- Affected asset: {finding['affected_asset']}",
+                f"- Evidence: {finding['evidence']}",
+                f"- Impact: {finding['impact']}",
+                f"- Recommendation: {finding['recommendation']}",
+                "",
+            ]
+        )
+
+    markdown_lines.extend(
+        [
+            "## 4. Rekomendacje",
+            "### Immediate",
+            *[f"- {x}" for x in immediate_actions],
+            "",
+            "### Short-term",
+            *[f"- {x}" for x in short_term_actions],
+            "",
+            "### Long-term",
+            *[f"- {x}" for x in long_term_actions],
+            "",
+            "## 5. Ograniczenia",
+            *[f"- {x}" for x in report["limitations"]],
+        ]
+    )
+
+    report["markdown"] = "\n".join(markdown_lines)
+    return report
+
+
 def execute_assistant_task(
     task: str,
     target: str | None,
@@ -390,6 +779,15 @@ def execute_assistant_task(
             for i, step in enumerate(plan)
         ],
         "steps": steps_out,
+        "professional_report": _build_professional_report(
+            task=task,
+            created_at=created_at,
+            selected_profiles=selected_profiles,
+            resolved_target=resolved_target,
+            resolved_domain=resolved_domain,
+            steps_out=steps_out,
+            summary=summary,
+        ),
     }
 
     report_meta = save_report(report_id=report_id, report=report)
