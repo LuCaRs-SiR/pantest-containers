@@ -94,6 +94,8 @@ services:
   ollama:
     image: ollama/ollama
     container_name: ollama-gpu
+    profiles:
+      - local-ollama
     restart: unless-stopped
     dns:
       - 1.1.1.1
@@ -118,6 +120,8 @@ services:
   ollama-init:
     image: curlimages/curl:8.10.1
     container_name: ollama-init
+    profiles:
+      - local-ollama
     depends_on:
       - ollama
     entrypoint: ["/bin/sh", "-lc"]

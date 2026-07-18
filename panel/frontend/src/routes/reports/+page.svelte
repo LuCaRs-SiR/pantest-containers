@@ -11,6 +11,7 @@
   let loadingReportDetails = $state(false);
   let error = $state('');
   let reportsError = $state('');
+  const REPORTS_LIMIT = 10;
 
   const issues = $derived.by(() => {
     if (!status) return [];
@@ -35,6 +36,12 @@
     if (!status) return 0;
     return Object.keys(status.containers).length;
   });
+
+  const visibleReports = $derived.by(() => reports.slice(0, REPORTS_LIMIT));
+
+  function isActiveReport(reportId: string) {
+    return activeReport?.id === reportId;
+  }
 
   async function refresh() {
     loading = true;
@@ -71,6 +78,14 @@
     } finally {
       loadingReportDetails = false;
     }
+  }
+
+  async function toggleReport(reportId: string) {
+    if (isActiveReport(reportId)) {
+      activeReport = null;
+      return;
+    }
+    await openReport(reportId);
   }
 
   onMount(async () => {
@@ -144,15 +159,26 @@
   {#if reports.length === 0}
     <p>Brak raportów. Uruchom zadanie w zakładce AI Assistant.</p>
   {:else}
+    <p class="reports-caption">Wyświetlanie {Math.min(reports.length, REPORTS_LIMIT)} z {reports.length} ostatnich raportów.</p>
     <div class="reports-list">
-      {#each reports as report}
-        <button class="report-item" onclick={() => openReport(report.id)}>
-          <div><strong>{report.task}</strong></div>
-          <div>
-            status={report.status} | kroki={report.steps_total} | błędy={report.steps_failed}
+      {#each visibleReports as report}
+        <div class="report-item">
+          <div class="report-meta">
+            <div><strong>{report.task}</strong></div>
+            <div>
+              status={report.status} | kroki={report.steps_total} | błędy={report.steps_failed}
+            </div>
+            <div class="stamp">{report.created_at}</div>
           </div>
-          <div class="stamp">{report.created_at}</div>
-        </button>
+          <button
+            class="toggle-icon"
+            aria-label={isActiveReport(report.id) ? `Zwiń raport ${report.id}` : `Rozwiń raport ${report.id}`}
+            title={isActiveReport(report.id) ? 'Zwiń szczegóły raportu' : 'Rozwiń szczegóły raportu'}
+            onclick={() => toggleReport(report.id)}
+          >
+            {isActiveReport(report.id) ? '▾' : '▸'}
+          </button>
+        </div>
       {/each}
     </div>
   {/if}
@@ -270,6 +296,12 @@
     margin-bottom: 14px;
   }
 
+  .reports-caption {
+    margin: 0 0 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
   .report-item {
     text-align: left;
     background: rgba(0, 229, 255, 0.08);
@@ -277,10 +309,39 @@
     border-radius: 8px;
     padding: 10px;
     color: var(--text-main);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
   }
 
   .report-item:hover {
     box-shadow: 0 0 14px rgba(0, 229, 255, 0.15);
+  }
+
+  .report-meta {
+    min-width: 0;
+  }
+
+  .toggle-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    background: rgba(0, 229, 255, 0.16);
+    color: var(--text-main);
+    font-size: 18px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .toggle-icon:hover {
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.22);
+    transform: scale(1.05);
   }
 
   .stamp {
