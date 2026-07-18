@@ -8,29 +8,42 @@ Modularny, konteneryzowany zestaw narzędzi pentestowych do rozpoznania, automat
 
 Ten projekt jest zbudowany jako zbiór niezależnych kontenerów, które można uruchamiać osobno lub razem przez `docker compose`. Każdy moduł ma własny katalog, Dockerfile oraz lokalny kod źródłowy, aby zapewnić skalowalność i szybki rozwój.
 
+> Cel: jedno środowisko do workflow pentestowego end-to-end: rozpoznanie -> skanowanie -> analiza -> raportowanie.
+
+## Spis treści
+
+- [Wizualizacja architektury](#wizualizacja-architektury)
+- [Co znajduje się w repozytorium](#co-znajduje-się-w-repozytorium)
+- [Szybki start](#szybki-start)
+- [Pierwsze 15 minut](#pierwsze-15-minut)
+- [Usługi i moduły](#usługi-i-moduły)
+- [Przykładowe komendy](#przykładowe-komendy)
+- [Rozwój projektu](#rozwój-projektu)
+- [Licencja](#licencja)
+
 ## Wizualizacja architektury
 
-Sekcja prezentuje widok high-level oraz przepływ operacyjny między modułami. Uklad jest celowo uproszczony, aby szybko pokazywac strukture projektu bez nadmiaru detali.
+Sekcja prezentuje widok high-level oraz przepływ operacyjny między modułami. Układ jest celowo uproszczony, aby szybko pokazać strukturę projektu bez nadmiaru detali.
 
 ### Executive View
 
-- Platforma laczy narzedzia pentestowe, warstwe AI i panel operacyjny w jednym, modularnym stacku kontenerowym.
-- Orkiestracja przez `docker compose` upraszcza uruchamianie, skalowanie i utrzymanie srodowiska.
-- Architektura wspiera scenariusze od rozpoznania po raportowanie i automatyzacje dzialan.
+- Platforma łączy narzędzia pentestowe, warstwę AI i panel operacyjny w jednym, modularnym stacku kontenerowym.
+- Orkiestracja przez `docker compose` upraszcza uruchamianie, skalowanie i utrzymanie środowiska.
+- Architektura wspiera scenariusze od rozpoznania po raportowanie i automatyzację działań.
 
 ### Architecture Overview
 
 <img src="tools-meta/assets/architecture/architecture-overview.jpg" alt="Architektura projektu" width="100%" />
 
 Opis:
-Widok topologii systemu pokazuje relacje miedzy kontenerami narzedziowymi, warstwa AI oraz panelem zarzadzania. Diagram sluzy jako mapa komponentow i punkt wejscia dla onboarding'u technicznego.
+Widok topologii systemu pokazuje relacje między kontenerami narzędziowymi, warstwą AI oraz panelem zarządzania. Diagram służy jako mapa komponentów i punkt wejścia dla onboardingu technicznego.
 
 ### Operational Flow
 
 <img src="tools-meta/assets/architecture/architecture-flow.jpg" alt="Przeplyw miedzy modulami" width="100%" />
 
 Opis:
-Widok przeplywu operacyjnego prezentuje kolejnosc dzialan i wymiane danych miedzy modulami. Ulatwia zrozumienie przebiegu procesu od uruchomienia narzedzi, przez analize, do generowania wynikow i raportow.
+Widok przepływu operacyjnego prezentuje kolejność działań i wymianę danych między modułami. Ułatwia zrozumienie procesu od uruchomienia narzędzi, przez analizę, do generowania wyników i raportów.
 
 ### Architecture At A Glance
 
@@ -96,7 +109,7 @@ To repozytorium ma być profesjonalnym fundamentem środowiska pentestowego:
 
 ## Szybki start
 
-Wersja skrocona dla szybkiego wejscia:
+Wersja skrócona dla szybkiego wejścia:
 
 1. Zbuduj obrazy:
 
@@ -110,23 +123,23 @@ docker compose build
 docker compose up -d nmap_suite recon panel
 ```
 
-3. Zweryfikuj, ze uslugi dzialaja:
+3. Zweryfikuj, że usługi działają:
 
 ```bash
 docker compose ps
 ```
 
-Po starcie przejdz do sekcji **Where to Start** dla pierwszego testu i walidacji.
+Po starcie przejdź do sekcji **Pierwsze 15 minut** dla pierwszego testu i walidacji.
 
-Jesli napotkasz blad API klienta:
+Jeśli napotkasz błąd API klienta:
 
 ```bash
 DOCKER_API_VERSION=1.44 docker compose up -d nmap_suite
 ```
 
-## Where to Start
+## Pierwsze 15 minut
 
-Nowa osoba w projekcie moze zaczac od tych 3 krokow:
+Nowa osoba w projekcie może zacząć od tych 3 kroków:
 
 1. **Uruchom stack bazowy**
 
@@ -135,7 +148,7 @@ docker compose build
 docker compose up -d nmap_suite recon panel
 ```
 
-2. **Zweryfikuj status uslug**
+2. **Zweryfikuj status usług**
 
 ```bash
 docker compose ps
@@ -250,10 +263,13 @@ Aktualna struktura katalogu głównego obejmuje:
 - `recon/`
 - `tools-meta/` (`assets/` + `docs/`)
 
-Katalogi deweloperskie lokalne (nieprodukcyjne):
+<details>
+<summary>Katalogi deweloperskie lokalne (nieprodukcyjne)</summary>
 
-- `.tmpvenv/` (lokalne venv narzedziowe)
+- `.tmpvenv/` (lokalne venv narzędziowe)
 - `.vscode/` (ustawienia edytora)
+
+</details>
 
 Pliki główne:
 
