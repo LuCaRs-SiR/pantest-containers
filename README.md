@@ -6,12 +6,27 @@ Ten projekt jest zbudowany jako zbiór niezależnych kontenerów, które można 
 
 ## Wizualizacja architektury
 
-Sekcja prezentuje widok high-level oraz przepływ operacyjny między modułami. Jest to szybka mapa dla zespołów security, DevOps i engineering.
+Sekcja prezentuje widok high-level oraz przepływ operacyjny między modułami. Uklad jest celowo uproszczony, aby szybko pokazywac strukture projektu bez nadmiaru detali.
 
-| Widok | Zakres | Grafika |
-|---|---|---|
-| Architecture Overview | Topologia kontenerów, zależności usług i warstwy systemu | ![Architektura projektu](assets/architecture/architecture-overview.jpg) |
-| Operational Flow | Przepływ danych i odpowiedzialności między modułami | ![Przepływ między modułami](assets/architecture/architecture-flow.jpg) |
+### Executive View
+
+- Platforma laczy narzedzia pentestowe, warstwe AI i panel operacyjny w jednym, modularnym stacku kontenerowym.
+- Orkiestracja przez `docker compose` upraszcza uruchamianie, skalowanie i utrzymanie srodowiska.
+- Architektura wspiera scenariusze od rozpoznania po raportowanie i automatyzacje dzialan.
+
+### Architecture Overview
+
+<img src="assets/architecture/architecture-overview.jpg" alt="Architektura projektu" width="100%" />
+
+Opis:
+Widok topologii systemu pokazuje relacje miedzy kontenerami narzedziowymi, warstwa AI oraz panelem zarzadzania. Diagram sluzy jako mapa komponentow i punkt wejscia dla onboarding'u technicznego.
+
+### Operational Flow
+
+<img src="assets/architecture/architecture-flow.jpg" alt="Przeplyw miedzy modulami" width="100%" />
+
+Opis:
+Widok przeplywu operacyjnego prezentuje kolejnosc dzialan i wymiane danych miedzy modulami. Ulatwia zrozumienie przebiegu procesu od uruchomienia narzedzi, przez analize, do generowania wynikow i raportow.
 
 ### Architecture At A Glance
 
