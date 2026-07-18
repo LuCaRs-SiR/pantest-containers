@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import re
 from uuid import uuid4
 
 from app.services.docker import run_in_container
@@ -11,120 +12,279 @@ def _normalize(text: str | None) -> str:
     return text.strip().lower()
 
 
+def _extract_domain(text: str) -> str | None:
+    match = re.search(r"\b([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)\b", text)
+    if not match:
+        return None
+    value = match.group(1).strip().lower()
+    if "/" in value:
+        return None
+    return value
+
+
+def _extract_target(text: str) -> str | None:
+    ipv4 = re.search(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", text)
+    if ipv4:
+        return ipv4.group(0)
+
+    host_like = re.search(r"\b[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+\b", text)
+    if host_like:
+        return host_like.group(0).lower()
+
+    return None
+
+
+def _detect_profiles(task: str) -> list[str]:
+    t = _normalize(task)
+
+    profile_keywords = {
+        "web": [
+            "web",
+            "http",
+            "https",
+            "burp",
+            "xss",
+            "sqli",
+            "sql injection",
+            "csrf",
+            "cookie",
+            "header",
+        ],
+        "api": [
+            "api",
+            "rest",
+            "graphql",
+            "swagger",
+            "openapi",
+            "endpoint",
+        ],
+        "infra": [
+            "infra",
+            "infrastr",
+            "siec",
+            "network",
+            "host",
+            "port",
+            "service",
+            "ssh",
+            "rdp",
+            "nmap",
+            "skan",
+            "scan",
+        ],
+        "ad": [
+            "active directory",
+            "ad",
+            "domain controller",
+            "dc",
+            "kerberos",
+            "ldap",
+            "smb",
+        ],
+        "automation": ["autopentest", "workflow", "automaty", "pipeline"],
+    }
+
+    profiles: list[str] = []
+    for profile, keywords in profile_keywords.items():
+        if any(keyword in t for keyword in keywords):
+            profiles.append(profile)
+
+    return profiles
+
+
+def _append_step(steps: list[dict], step: dict) -> None:
+    marker = (step["tool"], tuple(step["command"]))
+    for existing in steps:
+        other = (existing["tool"], tuple(existing["command"]))
+        if marker == other:
+            return
+    steps.append(step)
+
+
 def _build_plan(
     task: str,
     target: str | None,
     domain: str | None,
 ) -> list[dict]:
-    t = _normalize(task)
     steps: list[dict] = []
 
-    recon_keywords = [
-        "recon",
-        "rekones",
-        "subdomen",
-        "subdomain",
-        "domena",
-        "enumer",
-    ]
-    scan_keywords = ["nmap", "port", "uslug", "service", "skan", "scan"]
-    inspect_keywords = ["inspector", "analiz", "raport", "triage"]
-    auto_keywords = ["autopentest", "workflow", "automaty"]
+    if not domain:
+        domain = _extract_domain(task)
+    if not target:
+        target = _extract_target(task)
 
-    if domain and any(k in t for k in recon_keywords):
-        steps.append(
+    profiles = _detect_profiles(task)
+    if not profiles:
+        if domain and target:
+            profiles = ["web", "infra"]
+        elif domain:
+            profiles = ["web"]
+        elif target:
+            profiles = ["infra"]
+        else:
+            profiles = ["automation"]
+
+    if domain:
+        _append_step(
+            steps,
             {
                 "tool": "recon",
                 "label": "Enumeracja domeny i subdomen",
                 "container": "recon",
                 "command": ["subfinder", "-d", domain],
-            }
+            },
         )
 
-    if target and any(k in t for k in scan_keywords):
-        steps.append(
-            {
-                "tool": "nmap",
-                "label": "Skan usług i portów",
-                "container": "nmap-suite",
-                "command": ["nmap", "-sV", target],
-            }
-        )
-
-    if target and any(k in t for k in inspect_keywords):
-        steps.append(
-            {
-                "tool": "inspector",
-                "label": "Analiza wyników i inspekcja",
-                "container": "inspector",
-                "command": ["python3", "/app/core/inspector.py", "-h"],
-            }
-        )
-
-    # For mixed tasks with both domain and host target,
-    # run a standard sequence.
-    if domain and target and not steps:
-        steps.extend(
-            [
-                {
-                    "tool": "recon",
-                    "label": "Enumeracja domeny i subdomen",
-                    "container": "recon",
-                    "command": ["subfinder", "-d", domain],
-                },
+    if "web" in profiles:
+        web_target = target or domain
+        if web_target:
+            _append_step(
+                steps,
                 {
                     "tool": "nmap",
-                    "label": "Skan usług i portów",
+                    "label": "Skan usług web",
                     "container": "nmap-suite",
-                    "command": ["nmap", "-sV", target],
+                    "command": [
+                        "nmap",
+                        "-sV",
+                        "-p",
+                        "80,443,8080,8443",
+                        web_target,
+                    ],
                 },
-                {
-                    "tool": "inspector",
-                    "label": "Analiza wyników i inspekcja",
-                    "container": "inspector",
-                    "command": ["python3", "/app/core/inspector.py", "-h"],
-                },
-            ]
+            )
+        _append_step(
+            steps,
+            {
+                "tool": "burp",
+                "label": "Przygotowanie testu HTTP proxy",
+                "container": "burp",
+                "command": [
+                    "bash",
+                    "-lc",
+                    "echo 'Burp workflow: manual proxy validation required'",
+                ],
+            },
         )
 
-    if any(k in t for k in auto_keywords):
-        steps.append(
+    if "api" in profiles:
+        api_target = domain or target or "localhost"
+        probe_url = api_target
+        if (
+            not probe_url.startswith("http://")
+            and not probe_url.startswith("https://")
+        ):
+            probe_url = f"http://{probe_url}"
+        _append_step(
+            steps,
+            {
+                "tool": "kali",
+                "label": "Szybka walidacja endpointu API",
+                "container": "kali-tools",
+                "command": ["bash", "-lc", f"curl -skI {probe_url} || true"],
+            },
+        )
+        if target:
+            _append_step(
+                steps,
+                {
+                    "tool": "nmap",
+                    "label": "Skan portów API",
+                    "container": "nmap-suite",
+                    "command": [
+                        "nmap",
+                        "-sV",
+                        "-p",
+                        "80,443,3000,8000,8001",
+                        target,
+                    ],
+                },
+            )
+
+    if "infra" in profiles:
+        infra_target = target or domain
+        if infra_target:
+            _append_step(
+                steps,
+                {
+                    "tool": "nmap",
+                    "label": "Skan usług i portów infrastruktury",
+                    "container": "nmap-suite",
+                    "command": ["nmap", "-sV", infra_target],
+                },
+            )
+        _append_step(
+            steps,
+            {
+                "tool": "inspector",
+                "label": "Analiza i triage wyników",
+                "container": "inspector",
+                "command": ["python3", "/app/core/inspector.py", "-h"],
+            },
+        )
+
+    if "ad" in profiles:
+        ad_target = target or domain
+        if ad_target:
+            _append_step(
+                steps,
+                {
+                    "tool": "nmap",
+                    "label": "Skan usług AD",
+                    "container": "nmap-suite",
+                    "command": [
+                        "nmap",
+                        "-sV",
+                        "-p",
+                        "53,88,135,139,389,445,464,636,3268,3269",
+                        ad_target,
+                    ],
+                },
+            )
+            _append_step(
+                steps,
+                {
+                    "tool": "kali",
+                    "label": "Szybki rekonesans LDAP/SMB",
+                    "container": "kali-tools",
+                    "command": [
+                        "bash",
+                        "-lc",
+                        f"nmap -p 389,445 {ad_target} || true",
+                    ],
+                },
+            )
+
+    if "automation" in profiles:
+        _append_step(
+            steps,
             {
                 "tool": "autopentestx",
-                "label": "Sprawdzenie automatyzacji workflow",
+                "label": "Uruchomienie workflow automatyzacji",
                 "container": "autopentestx",
                 "command": ["python3", "/app/main.py", "--version"],
-            }
+            },
+        )
+        _append_step(
+            steps,
+            {
+                "tool": "hackagent",
+                "label": "Generowanie checklisty działań",
+                "container": "hackagent",
+                "command": ["hackagent", "--help"],
+            },
         )
 
     if not steps:
-        if target:
-            steps.append(
-                {
-                    "tool": "nmap",
-                    "label": "Domyślny skan usług i portów",
-                    "container": "nmap-suite",
-                    "command": ["nmap", "-sV", target],
-                }
-            )
-        elif domain:
-            steps.append(
-                {
-                    "tool": "recon",
-                    "label": "Domyślna enumeracja domeny",
-                    "container": "recon",
-                    "command": ["subfinder", "-d", domain],
-                }
-            )
-        else:
-            steps.append(
-                {
-                    "tool": "hackagent",
-                    "label": "Tryb doradczy asystenta",
-                    "container": "hackagent",
-                    "command": ["hackagent", "--help"],
-                }
-            )
+        _append_step(
+            steps,
+            {
+                "tool": "hackagent",
+                "label": "Tryb doradczy asystenta",
+                "container": "hackagent",
+                "command": ["hackagent", "--help"],
+            },
+        )
 
     return steps
 
