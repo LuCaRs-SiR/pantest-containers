@@ -59,6 +59,25 @@ Widok przeplywu operacyjnego prezentuje kolejnosc dzialan i wymiane danych miedz
 - `LICENSE` — licencja open-source MIT
 - `tools-meta/docs/project/ROADMAP.md` — plan dalszego rozwoju projektu
 
+## Struktura Repo (Quick View)
+
+```mermaid
+flowchart TB
+	R[repo root] --> S1[services]
+	R --> S2[runtime]
+	R --> S3[meta]
+	S1 --> A[ai-gateway]
+	S1 --> B[autopentestx]
+	S1 --> C[hackagent]
+	S1 --> D[inspector]
+	S1 --> E[nmap-suite / recon / kali-tools / burp]
+	S1 --> F[panel backend + frontend]
+	S2 --> G[logs]
+	S2 --> H[ollama-gpu]
+	S3 --> I[tools-meta assets]
+	S3 --> J[tools-meta docs]
+```
+
 ## Cel projektu
 
 To repozytorium ma być profesjonalnym fundamentem środowiska pentestowego:
@@ -191,7 +210,7 @@ python3 /app/core/inspector.py -h
 
 Zobacz `tools-meta/docs/project/ROADMAP.md` po szczegóły dotyczące kolejnych etapów rozwoju projektu.
 
-## Aktualny stan katalogu głównego (2026-07-18)
+## Aktualny stan katalogu głównego (2026-07-19)
 
 Aktualna struktura katalogu głównego obejmuje:
 
@@ -206,6 +225,12 @@ Aktualna struktura katalogu głównego obejmuje:
 - `ollama-gpu/` (lokalny stan runtime, domyślnie poza kontrolą wersji)
 - `panel/` (`backend/` + `frontend/`)
 - `recon/`
+- `tools-meta/` (`assets/` + `docs/`)
+
+Katalogi deweloperskie lokalne (nieprodukcyjne):
+
+- `.tmpvenv/` (lokalne venv narzedziowe)
+- `.vscode/` (ustawienia edytora)
 
 Pliki główne:
 
