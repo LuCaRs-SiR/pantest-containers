@@ -126,6 +126,31 @@ Jeżeli napotkasz błąd API klienta:
 DOCKER_API_VERSION=1.44 docker compose up -d nmap_suite
 ```
 
+## Where to Start
+
+Nowa osoba w projekcie moze zaczac od tych 3 krokow:
+
+1. **Uruchom stack bazowy**
+
+```bash
+docker compose build
+docker compose up -d nmap_suite recon panel
+```
+
+2. **Zweryfikuj status uslug**
+
+```bash
+docker compose ps
+docker logs panel-backend --tail 80
+```
+
+3. **Uruchom pierwszy skan testowy**
+
+```bash
+docker exec -it recon bash
+subfinder -d example.com
+```
+
 ## Usługi i moduły
 
 ### `nmap_suite`
