@@ -10,6 +10,16 @@ logger = logging.getLogger("ai-gateway")
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 DEFAULT_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
+DEFAULT_SYSTEM_PROMPT = os.getenv(
+    "OLLAMA_SYSTEM_PROMPT",
+    (
+        "Odpowiadaj zawsze po polsku. "
+        "Utrzymuj kontekst cyberbezpieczenstwa i testow penetracyjnych. "
+        "Podawaj kroki defensywne, legalne i etyczne. "
+        "Jesli pytanie jest niejasne, popros o doprecyzowanie i zaproponuj "
+        "bezpieczne, praktyczne kolejne kroki."
+    ),
+)
 
 
 class Prompt(BaseModel):
@@ -91,6 +101,7 @@ def health():
 def generate(payload: Prompt):
     outgoing = payload.model_dump()
     outgoing.setdefault("keep_alive", "24h")
+    outgoing.setdefault("system", DEFAULT_SYSTEM_PROMPT)
 
     try:
         return _call_ollama_generate(outgoing, timeout=180, retries=2)
