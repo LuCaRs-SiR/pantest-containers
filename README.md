@@ -1,5 +1,9 @@
 # Pentest Containers
 
+<p align="center">
+	<img src="assets/hero/repo-hero.jpg" alt="Pentest Containers Hero" width="100%" />
+</p>
+
 Modularny, konteneryzowany zestaw narzędzi pentestowych do rozpoznania, automatyzacji i inspekcji.
 
 Ten projekt jest zbudowany jako zbiór niezależnych kontenerów, które można uruchamiać osobno lub razem przez `docker compose`. Każdy moduł ma własny katalog, Dockerfile oraz lokalny kod źródłowy, aby zapewnić skalowalność i szybki rozwój.
