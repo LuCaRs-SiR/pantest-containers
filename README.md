@@ -96,31 +96,29 @@ To repozytorium ma być profesjonalnym fundamentem środowiska pentestowego:
 
 ## Szybki start
 
-1. Zbuduj wszystkie moduły:
+Wersja skrocona dla szybkiego wejscia:
+
+1. Zbuduj obrazy:
 
 ```bash
 docker compose build
 ```
 
-2. Uruchom wybrane moduły, np.:
+2. Uruchom bazowy stack:
 
 ```bash
-docker compose up -d nmap_suite recon hackagent autopentestx inspector ollama panel kali burp
+docker compose up -d nmap_suite recon panel
 ```
 
-3. Wejdź do kontenera:
+3. Zweryfikuj, ze uslugi dzialaja:
 
 ```bash
-docker exec -it nmap-suite bash
+docker compose ps
 ```
 
-4. Uruchom narzędzie w środku, np.:
+Po starcie przejdz do sekcji **Where to Start** dla pierwszego testu i walidacji.
 
-```bash
-nmap -sC -sV 192.168.1.1
-```
-
-Jeżeli napotkasz błąd API klienta:
+Jesli napotkasz blad API klienta:
 
 ```bash
 DOCKER_API_VERSION=1.44 docker compose up -d nmap_suite
