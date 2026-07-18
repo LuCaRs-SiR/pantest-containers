@@ -6,11 +6,20 @@ Ten projekt jest zbudowany jako zbiór niezależnych kontenerów, które można 
 
 ## Wizualizacja architektury
 
-Poniżej znajdują się aktualne grafiki prezentujące strukturę i przepływ w projekcie:
+Sekcja prezentuje widok high-level oraz przepływ operacyjny między modułami. Jest to szybka mapa dla zespołów security, DevOps i engineering.
 
-![Architektura projektu](assets/architecture/architecture-overview.jpg)
+| Widok | Zakres | Grafika |
+|---|---|---|
+| Architecture Overview | Topologia kontenerów, zależności usług i warstwy systemu | ![Architektura projektu](assets/architecture/architecture-overview.jpg) |
+| Operational Flow | Przepływ danych i odpowiedzialności między modułami | ![Przepływ między modułami](assets/architecture/architecture-flow.jpg) |
 
-![Przepływ między modułami](assets/architecture/architecture-flow.jpg)
+### Architecture At A Glance
+
+- **Model wdrożenia:** modularny stack kontenerowy uruchamiany przez `docker compose`
+- **Warstwa AI:** `ollama-gpu` + `ai-gateway` + `panel/backend`
+- **Warstwa operacyjna:** `nmap-suite`, `recon`, `kali-tools`, `inspector`, `autopentestx`, `hackagent`
+- **Warstwa prezentacji:** `panel/frontend` (SvelteKit)
+- **Telemetria i artefakty:** centralny katalog `logs/`
 
 ## Co znajduje się w repozytorium
 
